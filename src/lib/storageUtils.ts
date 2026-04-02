@@ -22,12 +22,12 @@ export async function uploadImageToStorage(
       .from(bucket)
       .upload(fileName, webpBlob, {
         contentType: 'image/webp',
-        upsert: true,
+        upsert: false,
       });
 
     if (error) {
       console.error('Erro no upload:', error);
-      throw new Error('NÃ£o foi possÃ­vel fazer upload da imagem');
+      throw new Error(error.message || 'Erro desconhecido do Supabase Storage');
     }
 
     // Obter URL pÃºblica

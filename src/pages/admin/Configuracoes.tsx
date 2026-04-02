@@ -102,9 +102,8 @@ function FaviconUploader() {
     if (!validation.valid) { toast.error(validation.error || 'Arquivo inválido'); e.target.value = ''; return; }
     setUploading(true);
     try {
-      const { url } = await uploadImageToStorage(file, 'logos', 'favicon', { quality: 0.9, maxWidth: 256, maxHeight: 256 });
-      const finalUrl = `${url}?t=${Date.now()}`;
-      setFaviconPreview(finalUrl);
+      const { url } = await uploadImageToStorage(file, 'logos', undefined, { quality: 0.9, maxWidth: 256, maxHeight: 256 });
+      setFaviconPreview(url);
       // Update the actual favicon in the document
       let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
       if (!link) {
@@ -112,13 +111,14 @@ function FaviconUploader() {
         link.rel = 'icon';
         document.head.appendChild(link);
       }
-      link.href = finalUrl;
+      link.href = url;
       link.type = 'image/webp';
       // Save to localStorage for persistence
-      localStorage.setItem('petcao-favicon', finalUrl);
+      localStorage.setItem('petcao-favicon', url);
       toast.success('Favicon atualizado!');
-    } catch {
-      toast.error('Erro ao enviar favicon.');
+    } catch (e: any) {
+      console.error("ERRO UPLOAD FAVICON:", e);
+      toast.error('Erro ao enviar favicon: ' + (e.message || 'Falha desconhecida'));
     }
     setUploading(false);
     e.target.value = '';
@@ -212,7 +212,7 @@ export default function Configuracoes() {
   const handleSaveHours = () => {
     const oldVals = { openTime: config.openingHours.openTime, closeTime: config.openingHours.closeTime };
     config.setOpeningHours({ openTime, closeTime });
-    logFieldChanges(actorId, 'horario_funcionamento', oldVals, { openTime, closeTime }).catch(() => {});
+    logFieldChanges(actorId, 'horario_funcionamento', oldVals, { openTime, closeTime }).catch(() => { });
     toast.success('Horário de funcionamento salvo!');
   };
 
@@ -244,7 +244,7 @@ export default function Configuracoes() {
   };
 
   const handleSaveBranding = () => {
-    logFieldChanges(actorId, 'branding', { shopName: branding.shopName, primaryColor: branding.primaryColor }, { shopName: brandingForm.shopName, primaryColor: brandingForm.primaryColor }).catch(() => {});
+    logFieldChanges(actorId, 'branding', { shopName: branding.shopName, primaryColor: branding.primaryColor }, { shopName: brandingForm.shopName, primaryColor: brandingForm.primaryColor }).catch(() => { });
     saveBranding(brandingForm);
     toast.success('Branding salvo com sucesso!');
   };
@@ -257,7 +257,7 @@ export default function Configuracoes() {
   const handleSaveInterval = () => {
     const val = intervalMode === 'custom' ? Number(customInterval) : Number(intervalMode);
     if (val < 10 || val > 120) { toast.error('Intervalo deve ser entre 10 e 120 minutos'); return; }
-    logFieldChanges(actorId, 'agenda', { slotIntervalMinutes: config.appointmentInterval }, { slotIntervalMinutes: val }).catch(() => {});
+    logFieldChanges(actorId, 'agenda', { slotIntervalMinutes: config.appointmentInterval }, { slotIntervalMinutes: val }).catch(() => { });
     config.setAppointmentInterval(val);
     toast.success(`Intervalo de ${val} minutos salvo!`);
   };
@@ -349,11 +349,10 @@ export default function Configuracoes() {
                   <button
                     key={key}
                     onClick={() => handleToggleDay(key)}
-                    className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-200 ${
-                      active
+                    className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-200 ${active
                         ? 'bg-primary/5 border-primary/30 shadow-sm'
                         : 'bg-muted/20 border-border/50 opacity-60 hover:opacity-80'
-                    }`}
+                      }`}
                   >
                     <span className="text-sm font-medium text-foreground hidden sm:inline">{label}</span>
                     <span className="text-sm font-medium text-foreground sm:hidden">{short}</span>
@@ -469,7 +468,7 @@ export default function Configuracoes() {
               <div className="space-y-2"><Label className="text-xs font-medium">Telefone</Label><Input value={addressForm.phone} onChange={e => setAddressForm(p => ({ ...p, phone: e.target.value }))} className="h-11" /></div>
               <div className="space-y-2"><Label className="text-xs font-medium">WhatsApp (só números)</Label><Input value={addressForm.whatsapp} onChange={e => setAddressForm(p => ({ ...p, whatsapp: e.target.value }))} className="h-11" /></div>
             </div>
-            <SaveButton onClick={() => { logFieldChanges(actorId, 'endereco', config.shopAddress, addressForm).catch(() => {}); config.setShopAddress(addressForm); toast.success('Endereço salvo!'); }} label="Salvar endereço" />
+            <SaveButton onClick={() => { logFieldChanges(actorId, 'endereco', config.shopAddress, addressForm).catch(() => { }); config.setShopAddress(addressForm); toast.success('Endereço salvo!'); }} label="Salvar endereço" />
           </PremiumCard>
 
           <PremiumCard icon={Map} title="Mapa e Coordenadas" description="Configure as coordenadas para o mapa interativo.">
@@ -481,7 +480,7 @@ export default function Configuracoes() {
               <Label className="text-xs font-medium">Zoom do Mapa</Label>
               <Input type="number" min={1} max={20} value={locationForm.zoom} onChange={e => setLocationForm(p => ({ ...p, zoom: Number(e.target.value) }))} className="h-11" />
             </div>
-            <SaveButton onClick={() => { logFieldChanges(actorId, 'coordenadas', config.locationSettings, locationForm).catch(() => {}); config.setLocationSettings(locationForm); toast.success('Coordenadas salvas!'); }} label="Salvar coordenadas" />
+            <SaveButton onClick={() => { logFieldChanges(actorId, 'coordenadas', config.locationSettings, locationForm).catch(() => { }); config.setLocationSettings(locationForm); toast.success('Coordenadas salvas!'); }} label="Salvar coordenadas" />
           </PremiumCard>
         </TabsContent>
 
@@ -499,7 +498,7 @@ export default function Configuracoes() {
                 </div>
               ))}
             </div>
-            <SaveButton onClick={() => { const oldLinks = config.socialLinks.reduce((a, s) => ({ ...a, [s.key + '_enabled']: s.enabled, [s.key + '_url']: s.url }), {} as any); const newLinks = socialLinksForm.reduce((a, s) => ({ ...a, [s.key + '_enabled']: s.enabled, [s.key + '_url']: s.url }), {} as any); logFieldChanges(actorId, 'redes_sociais', oldLinks, newLinks).catch(() => {}); config.setSocialLinks(socialLinksForm); toast.success('Redes sociais salvas!'); }} label="Salvar redes sociais" />
+            <SaveButton onClick={() => { const oldLinks = config.socialLinks.reduce((a, s) => ({ ...a, [s.key + '_enabled']: s.enabled, [s.key + '_url']: s.url }), {} as any); const newLinks = socialLinksForm.reduce((a, s) => ({ ...a, [s.key + '_enabled']: s.enabled, [s.key + '_url']: s.url }), {} as any); logFieldChanges(actorId, 'redes_sociais', oldLinks, newLinks).catch(() => { }); config.setSocialLinks(socialLinksForm); toast.success('Redes sociais salvas!'); }} label="Salvar redes sociais" />
           </PremiumCard>
         </TabsContent>
 
@@ -549,9 +548,8 @@ export default function Configuracoes() {
             <SectionLabel>Mascote / Imagem Central</SectionLabel>
             <div className="flex items-center gap-4">
               <div
-                className={`w-20 h-20 rounded-xl border-2 border-dashed overflow-hidden flex items-center justify-center cursor-pointer transition-all hover:border-primary/50 ${
-                  cmsForm.hero.imageUrl ? 'border-primary/30 bg-primary/5' : 'border-border/60 bg-muted/30'
-                }`}
+                className={`w-20 h-20 rounded-xl border-2 border-dashed overflow-hidden flex items-center justify-center cursor-pointer transition-all hover:border-primary/50 ${cmsForm.hero.imageUrl ? 'border-primary/30 bg-primary/5' : 'border-border/60 bg-muted/30'
+                  }`}
                 onClick={() => document.getElementById('cms-hero-mascot')?.click()}
               >
                 {cmsForm.hero.imageUrl ? (
@@ -587,11 +585,10 @@ export default function Configuracoes() {
                   <button
                     key={tmpl.id}
                     onClick={() => handleApplyTemplate(tmpl.id)}
-                    className={`p-4 rounded-2xl border-2 text-left transition-all duration-200 group ${
-                      isActive
+                    className={`p-4 rounded-2xl border-2 text-left transition-all duration-200 group ${isActive
                         ? 'border-primary bg-primary/5 shadow-sm shadow-primary/10'
                         : 'border-border/50 hover:border-primary/30 hover:bg-muted/20'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="font-semibold text-foreground text-sm">{tmpl.name}</h4>
@@ -631,7 +628,7 @@ export default function Configuracoes() {
                 </div>
               ))}
             </div>
-            <SaveButton onClick={() => { logFieldChanges(actorId, 'limites_galeria', config.displayLimits, limitsForm).catch(() => {}); config.setDisplayLimits(limitsForm); toast.success('Limites salvos!'); }} label="Salvar limites" />
+            <SaveButton onClick={() => { logFieldChanges(actorId, 'limites_galeria', config.displayLimits, limitsForm).catch(() => { }); config.setDisplayLimits(limitsForm); toast.success('Limites salvos!'); }} label="Salvar limites" />
           </PremiumCard>
 
           <GalleryCategoriesCard />
@@ -820,11 +817,10 @@ function NotificationSettingsCard() {
                 return (
                   <div
                     key={key}
-                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 ${
-                      isOn
+                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 ${isOn
                         ? 'bg-card border-border/60 hover:border-primary/20'
                         : 'bg-muted/15 border-border/30 opacity-60'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className={`w-9 h-9 rounded-xl ${ntConfig.bgClass} flex items-center justify-center shrink-0 transition-transform`}>

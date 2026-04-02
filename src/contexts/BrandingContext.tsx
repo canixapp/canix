@@ -2,13 +2,10 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useTheme } from 'next-themes';
 import { usePetshop } from '@/contexts/PetshopContext';
 
-export type TemplateId = 'modern' | 'minimal' | 'playful' | 'premiumDark';
-
 export interface Branding {
   shopName: string;
   logoUrl: string;
   primaryColor: string;
-  templateSelected: TemplateId;
 }
 
 export interface ShopStatus {
@@ -17,64 +14,6 @@ export interface ShopStatus {
   timeLabel: string;
   tooltipLabel: string;
 }
-
-type TokenMap = Record<string, string>;
-
-const TEMPLATE_TOKENS: Record<TemplateId, { light: TokenMap; dark: TokenMap }> = {
-  modern: { light: {}, dark: {} },
-  minimal: {
-    light: {
-      '--primary': '0 0% 20%', '--primary-foreground': '0 0% 100%',
-      '--secondary': '0 0% 50%', '--secondary-foreground': '0 0% 100%',
-      '--accent': '0 0% 96%', '--accent-foreground': '0 0% 20%', '--ring': '0 0% 20%',
-    },
-    dark: {
-      '--primary': '0 0% 82%', '--primary-foreground': '0 0% 10%',
-      '--secondary': '0 0% 55%', '--secondary-foreground': '0 0% 10%',
-      '--accent': '0 0% 16%', '--accent-foreground': '0 0% 82%', '--ring': '0 0% 82%',
-    },
-  },
-  playful: {
-    light: {
-      '--primary': '330 80% 55%', '--primary-foreground': '0 0% 100%',
-      '--secondary': '160 70% 45%', '--secondary-foreground': '0 0% 100%',
-      '--accent': '330 80% 95%', '--accent-foreground': '330 80% 55%', '--ring': '330 80% 55%',
-    },
-    dark: {
-      '--primary': '330 75% 65%', '--primary-foreground': '0 0% 100%',
-      '--secondary': '160 65% 55%', '--secondary-foreground': '0 0% 100%',
-      '--accent': '330 50% 16%', '--accent-foreground': '330 75% 65%',
-      '--card': '270 15% 14%', '--card-foreground': '0 0% 92%', '--ring': '330 75% 65%',
-    },
-  },
-  premiumDark: {
-    light: {
-      '--primary': '45 90% 42%', '--primary-foreground': '0 0% 100%',
-      '--background': '240 10% 96%', '--foreground': '240 10% 8%',
-      '--card': '240 10% 92%', '--card-foreground': '240 10% 8%',
-      '--muted': '240 10% 88%', '--muted-foreground': '240 10% 40%',
-      '--border': '240 10% 82%', '--accent': '45 90% 92%',
-      '--accent-foreground': '45 90% 30%', '--ring': '45 90% 42%',
-    },
-    dark: {
-      '--background': '240 10% 8%', '--foreground': '0 0% 95%',
-      '--primary': '45 90% 55%', '--primary-foreground': '240 10% 8%',
-      '--secondary': '45 60% 40%', '--secondary-foreground': '0 0% 100%',
-      '--card': '240 10% 12%', '--card-foreground': '0 0% 95%',
-      '--muted': '240 10% 15%', '--muted-foreground': '0 0% 60%',
-      '--border': '240 10% 20%', '--input': '240 10% 20%',
-      '--accent': '240 10% 15%', '--accent-foreground': '45 90% 55%',
-      '--popover': '240 10% 12%', '--popover-foreground': '0 0% 95%', '--ring': '45 90% 55%',
-    },
-  },
-};
-
-const ALL_TEMPLATE_VARS: string[] = [
-  '--primary', '--primary-foreground', '--secondary', '--secondary-foreground',
-  '--accent', '--accent-foreground', '--background', '--foreground',
-  '--card', '--card-foreground', '--muted', '--muted-foreground',
-  '--border', '--input', '--ring', '--popover', '--popover-foreground',
-];
 
 function hexToHsl(hex: string): string {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -115,7 +54,6 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     shopName: petshop?.name || 'PetCão',
     logoUrl: petshop?.logo_url || '',
     primaryColor: settings.primaryColor || '#0A7AE6',
-    templateSelected: (settings.templateSelected || 'modern') as TemplateId,
   };
 
   useEffect(() => {
@@ -124,17 +62,16 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const root = document.documentElement;
-    const templateId = branding.templateSelected;
-    const tokens = TEMPLATE_TOKENS[templateId]?.[currentTheme] || {};
-    ALL_TEMPLATE_VARS.forEach(v => root.style.removeProperty(v));
-    Object.entries(tokens).forEach(([prop, value]) => { root.style.setProperty(prop, value); });
     const hex = branding.primaryColor;
-    if (hex && hex !== '#0A7AE6' && templateId === 'modern') {
+    if (hex && hex !== '#0A7AE6') {
       const hsl = hexToHsl(hex);
       root.style.setProperty('--primary', hsl);
       root.style.setProperty('--ring', hsl);
+    } else {
+      root.style.removeProperty('--primary');
+      root.style.removeProperty('--ring');
     }
-  }, [branding.templateSelected, branding.primaryColor, currentTheme]);
+  }, [branding.primaryColor, currentTheme]);
 
   const saveBranding = useCallback(async (partial: Partial<Branding>) => {
     const petshopUpdates: Record<string, any> = {};
@@ -143,7 +80,6 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     if (partial.shopName !== undefined) petshopUpdates.name = partial.shopName;
     if (partial.logoUrl !== undefined) petshopUpdates.logo_url = partial.logoUrl;
     if (partial.primaryColor !== undefined) settingsUpdates.primaryColor = partial.primaryColor;
-    if (partial.templateSelected !== undefined) settingsUpdates.templateSelected = partial.templateSelected;
 
     const promises: Promise<any>[] = [];
     if (Object.keys(petshopUpdates).length > 0) promises.push(updatePetshop(petshopUpdates));

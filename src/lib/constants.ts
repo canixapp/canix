@@ -77,7 +77,7 @@ export interface PetshopSettings {
 
   // Branding (name/logo are petshop columns)
   primaryColor: string;
-  templateSelected: string;
+
 
   // Home CMS content
   homeContent: HomeContent;
@@ -150,7 +150,7 @@ export const DEFAULT_SETTINGS: PetshopSettings = {
 
   locationZoom: 15,
   primaryColor: '#0A7AE6',
-  templateSelected: 'modern',
+
 
   homeContent: DEFAULT_HOME_CONTENT,
 

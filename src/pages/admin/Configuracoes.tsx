@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useConfig, WeeklySchedule } from '@/hooks/useConfig';
-import { useBranding, TemplateId } from '@/contexts/BrandingContext';
+import { useBranding } from '@/contexts/BrandingContext';
 import { useHomeContent } from '@/hooks/useHomeContent';
 import { usePetshop } from '@/contexts/PetshopContext';
 import {
@@ -44,12 +44,7 @@ const DAY_LABELS: { key: keyof WeeklySchedule; label: string; short: string }[] 
   { key: 'sab', label: 'Sábado', short: 'Sáb' },
 ];
 
-const TEMPLATES: { id: TemplateId; name: string; desc: string; colors: string[] }[] = [
-  { id: 'modern', name: 'Modern Clean', desc: 'Design atual com azul e laranja', colors: ['#0A7AE6', '#E5A00D', '#FFFFFF'] },
-  { id: 'minimal', name: 'Minimal White', desc: 'Tons neutros e limpos', colors: ['#333333', '#808080', '#F8F8F8'] },
-  { id: 'playful', name: 'Playful Pets', desc: 'Colorido e divertido', colors: ['#D946A8', '#2EB87A', '#FFF0F7'] },
-  { id: 'premiumDark', name: 'Premium Dark', desc: 'Elegante e escuro', colors: ['#E5A00D', '#1A1A22', '#2A2A35'] },
-];
+
 
 const fadeUp = {
   initial: { opacity: 0, y: 8 },
@@ -249,10 +244,6 @@ export default function Configuracoes() {
     toast.success('Branding salvo com sucesso!');
   };
 
-  const handleApplyTemplate = (id: TemplateId) => {
-    saveBranding({ templateSelected: id });
-    toast.success(`Template "${TEMPLATES.find(t => t.id === id)?.name}" aplicado!`);
-  };
 
   const handleSaveInterval = () => {
     const val = intervalMode === 'custom' ? Number(customInterval) : Number(intervalMode);
@@ -575,39 +566,6 @@ export default function Configuracoes() {
               </p>
             </div>
 
-          </PremiumCard>
-
-          <PremiumCard icon={Layout} title="Templates do Site" description="Escolha um template visual para sua página.">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {TEMPLATES.map((tmpl) => {
-                const isActive = branding.templateSelected === tmpl.id;
-                return (
-                  <button
-                    key={tmpl.id}
-                    onClick={() => handleApplyTemplate(tmpl.id)}
-                    className={`p-4 rounded-2xl border-2 text-left transition-all duration-200 group ${isActive
-                        ? 'border-primary bg-primary/5 shadow-sm shadow-primary/10'
-                        : 'border-border/50 hover:border-primary/30 hover:bg-muted/20'
-                      }`}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-semibold text-foreground text-sm">{tmpl.name}</h4>
-                      {isActive && (
-                        <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                          <Check className="w-3.5 h-3.5 text-primary-foreground" />
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-3">{tmpl.desc}</p>
-                    <div className="flex gap-1.5">
-                      {tmpl.colors.map((color, i) => (
-                        <div key={i} className="w-8 h-8 rounded-lg border border-border/50 shadow-sm transition-transform group-hover:scale-105" style={{ backgroundColor: color }} />
-                      ))}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
           </PremiumCard>
         </TabsContent>
 

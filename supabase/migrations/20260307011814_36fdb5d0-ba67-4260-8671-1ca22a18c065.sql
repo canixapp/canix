@@ -1,0 +1,1 @@
+ALTER TABLE public.gallery_categories ADD COLUMN is_active boolean NOT NULL DEFAULT true;

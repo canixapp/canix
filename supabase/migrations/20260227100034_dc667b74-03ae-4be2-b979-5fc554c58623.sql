@@ -1,0 +1,1 @@
+ALTER TABLE public.petshops ADD COLUMN IF NOT EXISTS settings jsonb DEFAULT '{}'::jsonb;

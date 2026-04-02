@@ -1,0 +1,64 @@
+import { supabase } from '@/lib/supabase';
+import { PETSHOP_ID } from '@/lib/constants';
+
+export interface ServiceRow {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string;
+  icon: string | null;
+  active: boolean | null;
+  price_pequeno: number | null;
+  price_medio: number | null;
+  price_grande: number | null;
+  duration_minutes: number | null;
+  sort_order: number | null;
+  petshop_id: string;
+}
+
+export async function getServices(): Promise<ServiceRow[]> {
+  const { data, error } = await supabase
+    .from('services')
+    .select('*')
+    .eq('petshop_id', PETSHOP_ID)
+    .order('sort_order', { ascending: true });
+  if (error) { console.error('getServices error:', error); return []; }
+  return (data || []) as ServiceRow[];
+}
+
+export async function getActiveServices(): Promise<ServiceRow[]> {
+  const all = await getServices();
+  return all.filter(s => s.active !== false);
+}
+
+export async function createService(data: Omit<ServiceRow, 'id' | 'petshop_id'>): Promise<ServiceRow> {
+  const { data: row, error } = await supabase
+    .from('services')
+    .insert({ ...data, petshop_id: PETSHOP_ID } as any)
+    .select()
+    .single();
+  if (error) { 
+    console.error('createService error:', error); 
+    throw new Error(error.message); 
+  }
+  return row as ServiceRow;
+}
+
+export async function updateService(id: string, data: Partial<ServiceRow>): Promise<boolean> {
+  // Strip read-only / non-column fields to avoid Supabase errors
+  const { id: _id, petshop_id: _pid, ...payload } = data as any;
+  const { error } = await supabase
+    .from('services')
+    .update(payload)
+    .eq('id', id);
+  if (error) {
+    console.error('updateService error:', error);
+    throw new Error(error.message);
+  }
+  return true;
+}
+
+export async function deleteService(id: string): Promise<boolean> {
+  const { error } = await supabase.from('services').delete().eq('id', id);
+  return !error;
+}

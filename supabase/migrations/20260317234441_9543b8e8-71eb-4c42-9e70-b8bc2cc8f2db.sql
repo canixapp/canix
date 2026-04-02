@@ -1,0 +1,2 @@
+ALTER TABLE public.services DROP CONSTRAINT services_category_check;
+ALTER TABLE public.services ADD CONSTRAINT services_category_check CHECK (category = ANY (ARRAY['banho'::text, 'tosa'::text, 'combo'::text, 'estetica'::text, 'tratamento'::text, 'extra'::text, 'outro'::text]));

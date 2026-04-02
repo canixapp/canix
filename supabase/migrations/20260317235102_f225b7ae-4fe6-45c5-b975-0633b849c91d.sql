@@ -1,0 +1,1 @@
+ALTER TABLE public.services DROP CONSTRAINT services_category_check;

@@ -103,7 +103,8 @@ function FaviconUploader() {
     setUploading(true);
     try {
       const { url } = await uploadImageToStorage(file, 'logos', 'favicon', { quality: 0.9, maxWidth: 256, maxHeight: 256 });
-      setFaviconPreview(url);
+      const finalUrl = `${url}?t=${Date.now()}`;
+      setFaviconPreview(finalUrl);
       // Update the actual favicon in the document
       let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
       if (!link) {
@@ -111,10 +112,10 @@ function FaviconUploader() {
         link.rel = 'icon';
         document.head.appendChild(link);
       }
-      link.href = url;
-      link.type = 'image/png';
+      link.href = finalUrl;
+      link.type = 'image/webp';
       // Save to localStorage for persistence
-      localStorage.setItem('petcao-favicon', url);
+      localStorage.setItem('petcao-favicon', finalUrl);
       toast.success('Favicon atualizado!');
     } catch {
       toast.error('Erro ao enviar favicon.');

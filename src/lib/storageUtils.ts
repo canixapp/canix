@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { convertImageToWebP, generateUniqueFileName, ConvertToWebPOptions } from './imageUtils';
 
 /**
@@ -22,7 +22,7 @@ export async function uploadImageToStorage(
       .from(bucket)
       .upload(fileName, webpBlob, {
         contentType: 'image/webp',
-        upsert: false,
+        upsert: true,
       });
 
     if (error) {

@@ -43,12 +43,12 @@ export function DevToolsTestModes() {
       label: 'Modo Demonstração',
       description: 'Cria dados fictícios automaticamente para demonstração do sistema.',
       icon: Database,
-      iconColor: 'text-violet-500',
-      iconBg: 'bg-violet-500/10',
+      iconColor: 'text-cyan-500',
+      iconBg: 'bg-cyan-500/10',
       active: demoModeActive,
       onToggle: toggleDemoMode,
-      ringColor: 'ring-violet-500/20',
-      activeBg: 'bg-violet-500/5',
+      ringColor: 'ring-cyan-500/20',
+      activeBg: 'bg-cyan-500/5',
     },
   ];
 
@@ -98,9 +98,9 @@ export function DevToolsTestModes() {
 
       {/* Demo data info */}
       {demoModeActive && demoData && (
-        <Card className="shadow-sm border-violet-500/20">
+        <Card className="shadow-sm border-cyan-500/20">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2 text-violet-600 dark:text-violet-400">
+            <CardTitle className="text-base flex items-center gap-2 text-cyan-600 dark:text-cyan-400">
               <Database className="w-5 h-5" />
               Dados de Demonstração
             </CardTitle>

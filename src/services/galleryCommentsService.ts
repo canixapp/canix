@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export interface GalleryComment {
   id: string;
@@ -24,6 +24,14 @@ export async function getCommentsForPhoto(photoId: string): Promise<GalleryComme
   return (data || []) as GalleryComment[];
 }
 
+export interface GalleryCommentInsert {
+  photo_id: string;
+  user_id: string;
+  user_name: string;
+  user_avatar_url: string | null;
+  comment_text: string;
+}
+
 export async function addComment(
   photoId: string,
   userId: string,
@@ -34,15 +42,17 @@ export async function addComment(
   const trimmed = text.trim();
   if (!trimmed || trimmed.length > 500) return null;
 
+  const insertData: GalleryCommentInsert = {
+    photo_id: photoId,
+    user_id: userId,
+    user_name: userName,
+    user_avatar_url: avatarUrl,
+    comment_text: trimmed,
+  };
+
   const { data, error } = await supabase
     .from('gallery_comments')
-    .insert({
-      photo_id: photoId,
-      user_id: userId,
-      user_name: userName,
-      user_avatar_url: avatarUrl,
-      comment_text: trimmed,
-    } as any)
+    .insert(insertData)
     .select()
     .single();
 
@@ -70,8 +80,8 @@ export async function getCommentCountsForPhotos(photoIds: string[]): Promise<Rec
 
   const counts: Record<string, number> = {};
   for (const id of photoIds) counts[id] = 0;
-  for (const row of data || []) {
-    counts[(row as any).photo_id] = (counts[(row as any).photo_id] || 0) + 1;
+  for (const row of (data || []) as { photo_id: string }[]) {
+    counts[row.photo_id] = (counts[row.photo_id] || 0) + 1;
   }
   return counts;
 }

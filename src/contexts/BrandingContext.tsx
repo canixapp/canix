@@ -74,14 +74,14 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
   }, [branding.primaryColor, currentTheme]);
 
   const saveBranding = useCallback(async (partial: Partial<Branding>) => {
-    const petshopUpdates: Record<string, any> = {};
-    const settingsUpdates: Record<string, any> = {};
+    const petshopUpdates: Record<string, string | null> = {};
+    const settingsUpdates: Record<string, string> = {};
 
     if (partial.shopName !== undefined) petshopUpdates.name = partial.shopName;
     if (partial.logoUrl !== undefined) petshopUpdates.logo_url = partial.logoUrl;
     if (partial.primaryColor !== undefined) settingsUpdates.primaryColor = partial.primaryColor;
 
-    const promises: Promise<any>[] = [];
+    const promises: Promise<boolean>[] = [];
     if (Object.keys(petshopUpdates).length > 0) promises.push(updatePetshop(petshopUpdates));
     if (Object.keys(settingsUpdates).length > 0) promises.push(updateSettings(settingsUpdates));
     await Promise.all(promises);

@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export interface PetNoteRow {
   id: string;
@@ -19,10 +19,17 @@ export async function getPetNotes(petId: string): Promise<PetNoteRow[]> {
   return (data || []) as PetNoteRow[];
 }
 
+export interface PetNoteInsert {
+  pet_id: string;
+  note: string;
+  created_by?: string | null;
+}
+
 export async function createPetNote(petId: string, note: string, createdBy?: string): Promise<PetNoteRow | null> {
+  const insertData: PetNoteInsert = { pet_id: petId, note, created_by: createdBy || null };
   const { data, error } = await supabase
     .from('pet_notes')
-    .insert({ pet_id: petId, note, created_by: createdBy || null } as any)
+    .insert(insertData)
     .select()
     .single();
   if (error) { console.error('createPetNote error:', error); return null; }

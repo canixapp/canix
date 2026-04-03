@@ -111,9 +111,10 @@ function FaviconUploader() {
       // Save to localStorage for persistence
       localStorage.setItem('petcao-favicon', url);
       toast.success('Favicon atualizado!');
-    } catch (e: any) {
-      console.error("ERRO UPLOAD FAVICON:", e);
-      toast.error('Erro ao enviar favicon: ' + (e.message || 'Falha desconhecida'));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("ERRO UPLOAD FAVICON:", err);
+      toast.error('Erro ao enviar favicon: ' + msg);
     }
     setUploading(false);
     e.target.value = '';
@@ -459,7 +460,7 @@ export default function Configuracoes() {
               <div className="space-y-2"><Label className="text-xs font-medium">Telefone</Label><Input value={addressForm.phone} onChange={e => setAddressForm(p => ({ ...p, phone: e.target.value }))} className="h-11" /></div>
               <div className="space-y-2"><Label className="text-xs font-medium">WhatsApp (só números)</Label><Input value={addressForm.whatsapp} onChange={e => setAddressForm(p => ({ ...p, whatsapp: e.target.value }))} className="h-11" /></div>
             </div>
-            <SaveButton onClick={() => { logFieldChanges(actorId, 'endereco', config.shopAddress, addressForm).catch(() => { }); config.setShopAddress(addressForm); toast.success('Endereço salvo!'); }} label="Salvar endereço" />
+            <SaveButton onClick={() => { logFieldChanges(actorId, 'endereco', config.shopAddress as unknown as Record<string, unknown>, addressForm as unknown as Record<string, unknown>).catch(() => { }); config.setShopAddress(addressForm); toast.success('Endereço salvo!'); }} label="Salvar endereço" />
           </PremiumCard>
 
           <PremiumCard icon={Map} title="Mapa e Coordenadas" description="Configure as coordenadas para o mapa interativo.">
@@ -471,7 +472,7 @@ export default function Configuracoes() {
               <Label className="text-xs font-medium">Zoom do Mapa</Label>
               <Input type="number" min={1} max={20} value={locationForm.zoom} onChange={e => setLocationForm(p => ({ ...p, zoom: Number(e.target.value) }))} className="h-11" />
             </div>
-            <SaveButton onClick={() => { logFieldChanges(actorId, 'coordenadas', config.locationSettings, locationForm).catch(() => { }); config.setLocationSettings(locationForm); toast.success('Coordenadas salvas!'); }} label="Salvar coordenadas" />
+            <SaveButton onClick={() => { logFieldChanges(actorId, 'coordenadas', config.locationSettings as unknown as Record<string, unknown>, locationForm as unknown as Record<string, unknown>).catch(() => { }); config.setLocationSettings(locationForm); toast.success('Coordenadas salvas!'); }} label="Salvar coordenadas" />
           </PremiumCard>
         </TabsContent>
 
@@ -489,7 +490,16 @@ export default function Configuracoes() {
                 </div>
               ))}
             </div>
-            <SaveButton onClick={() => { const oldLinks = config.socialLinks.reduce((a, s) => ({ ...a, [s.key + '_enabled']: s.enabled, [s.key + '_url']: s.url }), {} as any); const newLinks = socialLinksForm.reduce((a, s) => ({ ...a, [s.key + '_enabled']: s.enabled, [s.key + '_url']: s.url }), {} as any); logFieldChanges(actorId, 'redes_sociais', oldLinks, newLinks).catch(() => { }); config.setSocialLinks(socialLinksForm); toast.success('Redes sociais salvas!'); }} label="Salvar redes sociais" />
+            <SaveButton 
+              onClick={() => { 
+                const oldLinks = config.socialLinks.reduce((acc, s) => ({ ...acc, [s.key + '_enabled']: s.enabled, [s.key + '_url']: s.url }), {} as Record<string, string | boolean>); 
+                const newLinks = socialLinksForm.reduce((acc, s) => ({ ...acc, [s.key + '_enabled']: s.enabled, [s.key + '_url']: s.url }), {} as Record<string, string | boolean>); 
+                logFieldChanges(actorId, 'redes_sociais', oldLinks, newLinks).catch(() => { }); 
+                config.setSocialLinks(socialLinksForm); 
+                toast.success('Redes sociais salvas!'); 
+              }} 
+              label="Salvar redes sociais" 
+            />
           </PremiumCard>
         </TabsContent>
 
@@ -586,7 +596,7 @@ export default function Configuracoes() {
                 </div>
               ))}
             </div>
-            <SaveButton onClick={() => { logFieldChanges(actorId, 'limites_galeria', config.displayLimits, limitsForm).catch(() => { }); config.setDisplayLimits(limitsForm); toast.success('Limites salvos!'); }} label="Salvar limites" />
+            <SaveButton onClick={() => { logFieldChanges(actorId, 'limites_galeria', config.displayLimits as unknown as Record<string, unknown>, limitsForm as unknown as Record<string, unknown>).catch(() => { }); config.setDisplayLimits(limitsForm); toast.success('Limites salvos!'); }} label="Salvar limites" />
           </PremiumCard>
 
           <GalleryCategoriesCard />

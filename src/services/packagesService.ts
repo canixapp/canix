@@ -33,6 +33,41 @@ export interface CustomerPackageRow {
   interval_days?: number;
 }
 
+interface PackageJoinData {
+  name: string;
+  type: string;
+  interval_days: number;
+}
+
+interface PetJoinData {
+  name: string;
+  size: string;
+  breed: string;
+}
+
+interface SupabaseCustomerPackageData extends CustomerPackageRow {
+  packages: PackageJoinData | null;
+  pets: PetJoinData | null;
+}
+
+export interface CustomerPackageInsert {
+  petshop_id: string;
+  customer_id: string;
+  package_id: string | null;
+  pet_id: string | null;
+  start_date: string;
+  status: string;
+  observation: string | null;
+}
+
+export interface CustomerPackageUpdate {
+  package_id?: string | null;
+  pet_id?: string | null;
+  start_date?: string;
+  status?: string;
+  observation?: string | null;
+}
+
 export async function getPackages(): Promise<PackageRow[]> {
   const { data, error } = await supabase
     .from('packages')
@@ -52,15 +87,17 @@ export async function getCustomerPackages(): Promise<CustomerPackageRow[]> {
   
   if (error) { console.error('getCustomerPackages error:', error); return []; }
   
+  const typedData = (data || []) as unknown as SupabaseCustomerPackageData[];
+  
   // Fetch profiles for customer names
-  const customerIds = [...new Set((data || []).map((p: any) => p.customer_id))];
+  const customerIds = [...new Set(typedData.map(p => p.customer_id))];
   const { data: profiles } = await supabase
     .from('profiles')
     .select('user_id, name, phone')
     .in('user_id', customerIds);
   const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
   
-  return (data || []).map((p: any) => ({
+  return typedData.map(p => ({
     ...p,
     customer_name: profileMap.get(p.customer_id)?.name || '',
     customer_phone: profileMap.get(p.customer_id)?.phone || '',
@@ -70,7 +107,7 @@ export async function getCustomerPackages(): Promise<CustomerPackageRow[]> {
     package_name: p.packages?.name || '',
     package_type: p.packages?.type || '',
     interval_days: p.packages?.interval_days || 0,
-  })) as CustomerPackageRow[];
+  }));
 }
 
 export async function createCustomerPackage(data: {
@@ -80,17 +117,19 @@ export async function createCustomerPackage(data: {
   start_date?: string;
   observation?: string;
 }): Promise<CustomerPackageRow | null> {
+  const insertData: CustomerPackageInsert = {
+    petshop_id: PETSHOP_ID,
+    customer_id: data.customer_id,
+    package_id: data.package_id,
+    pet_id: data.pet_id || null,
+    start_date: data.start_date || new Date().toISOString().split('T')[0],
+    observation: data.observation || '',
+    status: 'ATIVO',
+  };
+
   const { data: row, error } = await supabase
     .from('customer_packages')
-    .insert({
-      petshop_id: PETSHOP_ID,
-      customer_id: data.customer_id,
-      package_id: data.package_id,
-      pet_id: data.pet_id || null,
-      start_date: data.start_date || new Date().toISOString().split('T')[0],
-      observation: data.observation || '',
-      status: 'ATIVO',
-    } as any)
+    .insert(insertData)
     .select()
     .single();
   if (error) { 
@@ -100,8 +139,8 @@ export async function createCustomerPackage(data: {
   return row as CustomerPackageRow;
 }
 
-export async function updateCustomerPackage(id: string, data: Partial<CustomerPackageRow>): Promise<boolean> {
-  const { error } = await supabase.from('customer_packages').update(data as any).eq('id', id);
+export async function updateCustomerPackage(id: string, data: CustomerPackageUpdate): Promise<boolean> {
+  const { error } = await supabase.from('customer_packages').update(data).eq('id', id);
   return !error;
 }
 

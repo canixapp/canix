@@ -105,27 +105,27 @@ export default function Clientes() {
       const id = t.user_id;
       clientMap.set(id, {
         id, phone, name: t.name, email: '',
-        createdAt: (t as any).created_at || null,
-        pets: (t as any).pets?.map((p: any) => ({ id: p.id, name: p.name, size: p.size || '', breed: p.breed || '' })) || [],
-        petCount: (t as any).pets?.length || 0,
+        createdAt: t.created_at || null,
+        pets: t.pets?.map(p => ({ id: p.id, name: p.name, size: p.size || '', breed: p.breed || '' })) || [],
+        petCount: t.pets?.length || 0,
         activePackage: null, lastAppointmentDate: null, appointmentHistory: [],
-        lgpdAccepted: (t as any).lgpd_accepted || false,
-        lgpdAcceptedAt: (t as any).lgpd_accepted_at || null,
+        lgpdAccepted: t.lgpd_accepted || false,
+        lgpdAcceptedAt: t.lgpd_accepted_at || null,
       });
     });
 
     appointments.forEach(a => {
       const clientId = a.customer_id;
       let client = clientMap.get(clientId);
-      if (!client && (a as any).customer_phone) {
-        const phone = (a as any).customer_phone.replace(/\D/g, '');
+      if (!client && a.customer_phone) {
+        const phone = a.customer_phone.replace(/\D/g, '');
         const found = Array.from(clientMap.values()).find(c => c.phone === phone);
         if (found) client = found;
       }
       if (client) {
         client.appointmentHistory.push({
           date: a.date, time: a.time, service: a.service_name,
-          petName: (a as any).pets?.map((p: any) => p.pet_name).join(', ') || '', status: a.status,
+          petName: a.pets?.map(p => p.pet_name).join(', ') || '', status: a.status,
         });
       }
     });
@@ -370,7 +370,7 @@ export default function Clientes() {
                                 {cfg.label}
                               </span>
                               {client.activePackage && (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 shadow-sm">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 shadow-sm">
                                   <Package className="w-3 h-3" />
                                   Pacote
                                 </span>
@@ -584,9 +584,9 @@ export default function Clientes() {
               {selectedClient.activePackage && (
                 <div className="space-y-3">
                   <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Pacote</h3>
-                  <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-violet-500/10 border border-violet-500/20 shadow-sm">
-                    <Package className="w-5 h-5 text-violet-600 dark:text-violet-400" />
-                    <span className="text-sm font-bold text-violet-600 dark:text-violet-400">
+                  <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 shadow-sm">
+                    <Package className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+                    <span className="text-sm font-bold text-cyan-600 dark:text-cyan-400">
                       {selectedClient.activePackage.type}
                     </span>
                   </div>

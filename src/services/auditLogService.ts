@@ -1,16 +1,28 @@
-﻿import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
+import type { Json } from '@/integrations/supabase/types';
 
 export interface AuditLogRow {
   id: string;
   action: string;
   actor_id: string;
   target_id: string | null;
-  details: any;
+  details: Json;
   created_at: string;
   entity: string | null;
   field: string | null;
   old_value: string | null;
   new_value: string | null;
+}
+
+export interface AuditLogInsert {
+  actor_id: string;
+  action: string;
+  entity?: string;
+  field?: string;
+  old_value?: string;
+  new_value?: string;
+  target_id?: string;
+  details?: Json;
 }
 
 export async function getRecentAuditLogs(hoursBack = 48): Promise<AuditLogRow[]> {
@@ -22,22 +34,13 @@ export async function getRecentAuditLogs(hoursBack = 48): Promise<AuditLogRow[]>
     .order('created_at', { ascending: false })
     .limit(200);
   if (error) throw error;
-  return (data || []) as unknown as AuditLogRow[];
+  return (data || []) as AuditLogRow[];
 }
 
-export async function insertAuditLog(entry: {
-  actor_id: string;
-  action: string;
-  entity?: string;
-  field?: string;
-  old_value?: string;
-  new_value?: string;
-  target_id?: string;
-  details?: any;
-}) {
+export async function insertAuditLog(entry: AuditLogInsert) {
   const { error } = await supabase
     .from('audit_log')
-    .insert(entry as any);
+    .insert(entry);
   if (error) console.error('Audit log error:', error);
 }
 
@@ -45,10 +48,10 @@ export async function insertAuditLog(entry: {
 export async function logFieldChanges(
   actorId: string,
   entity: string,
-  oldValues: Record<string, any>,
-  newValues: Record<string, any>,
+  oldValues: Record<string, unknown>,
+  newValues: Record<string, unknown>,
 ) {
-  const entries: any[] = [];
+  const entries: AuditLogInsert[] = [];
   for (const key of Object.keys(newValues)) {
     const oldVal = JSON.stringify(oldValues[key] ?? null);
     const newVal = JSON.stringify(newValues[key] ?? null);
@@ -64,6 +67,6 @@ export async function logFieldChanges(
     }
   }
   if (entries.length === 0) return;
-  const { error } = await supabase.from('audit_log').insert(entries as any);
+  const { error } = await supabase.from('audit_log').insert(entries);
   if (error) console.error('Audit log batch error:', error);
 }

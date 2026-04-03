@@ -111,8 +111,8 @@ async function buildUser(supabaseUser: SupabaseUser): Promise<User | null> {
 
     if (!profile || !profile.active) return null;
 
-    const profileCompleted = (profile as any).profile_completed === true;
-    const mustChangePassword = (profile as any).must_change_password === true;
+    const profileCompleted = profile.profile_completed === true;
+    const mustChangePassword = profile.must_change_password === true;
     const user: User = {
       id: supabaseUser.id,
       name: profile.name || supabaseUser.email || '',
@@ -190,16 +190,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select('*, appointment_pets(*)')
         .eq('customer_id', user.id)
         .order('date', { ascending: false });
-      setAppointments((data || []).map((a: any) => ({
+      
+      const mappedAppointments = (data || []).map((a: appointmentsService.AppointmentRow & { appointment_pets?: { pet_name: string }[] }) => ({
         id: a.id,
         service: a.service_name,
         date: a.date,
         time: a.time,
         status: a.status,
-        petName: a.appointment_pets?.map((p: any) => p.pet_name).join(', ') || '',
+        petName: a.appointment_pets?.map(p => p.pet_name).join(', ') || '',
         price: a.price || 0,
         payment_status: a.payment_status,
-      })));
+      }));
+      setAppointments(mappedAppointments);
     } catch (e) { console.error('fetchClientAppointments:', e); }
     setAppointmentsLoading(false);
   }, [user]);
@@ -338,16 +340,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (authData.user) {
       // Update profile with phone and mark completed
-      const profileUpdate: any = { profile_completed: !!data.petName };
+      const profileUpdate: profilesService.ProfileUpdate = { profile_completed: !!data.petName };
       if (e164) profileUpdate.phone = e164;
       await profilesService.updateProfile(authData.user.id, profileUpdate);
-
-      // Update user_accounts with real email if using virtual email
-      if (data.email && e164) {
-        await supabase.from('user_accounts').update({
-          phone_e164: e164,
-        } as any).eq('id', authData.user.id);
-      }
 
       // Create pets if provided
       if (data.petName) {
@@ -374,7 +369,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Force refresh user state AFTER all data is saved to avoid race condition
-      // where onAuthStateChange reads stale profile_completed=false and no pets
       const appUser = await buildUser(authData.user);
       setUser(appUser);
     }
@@ -391,10 +385,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(prev => {
       if (!prev) return null;
       if (data.name || data.phone) {
-        profilesService.updateProfile(prev.id, {
-          ...(data.name ? { name: data.name } : {}),
-          ...(data.phone ? { phone: data.phone } : {}),
-        } as any);
+        const payload: profilesService.ProfileUpdate = {};
+        if (data.name) payload.name = data.name;
+        if (data.phone) payload.phone = data.phone;
+        profilesService.updateProfile(prev.id, payload);
       }
       return { ...prev, ...data };
     });
@@ -403,7 +397,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateUserAvatar = useCallback((url: string) => {
     setUser(prev => {
       if (!prev) return null;
-      profilesService.updateProfile(prev.id, { avatar_url: url } as any);
+      profilesService.updateProfile(prev.id, { avatar_url: url });
       return { ...prev, avatarUrl: url };
     });
   }, []);
@@ -422,7 +416,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const updatePetAction = useCallback(async (petId: string, data: Partial<Pet>) => {
-    await petsService.updatePet(petId, data as any);
+    await petsService.updatePet(petId, data as petsService.PetUpdate);
     setUser(prev => prev ? { ...prev, pets: prev.pets.map(p => p.id === petId ? { ...p, ...data } : p) } : null);
   }, []);
 

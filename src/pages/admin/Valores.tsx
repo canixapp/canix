@@ -20,7 +20,7 @@ const sizeLabels: { key: SizeKey; label: string; emoji: string }[] = [
 
 const categoryConfig: Record<string, { icon: typeof Droplets; color: string; gradient: string; label: string }> = {
   banho: { icon: Droplets, color: 'text-sky-500', gradient: 'from-sky-500/20 to-sky-500/5', label: 'Banho' },
-  tosa: { icon: Scissors, color: 'text-violet-500', gradient: 'from-violet-500/20 to-violet-500/5', label: 'Tosa' },
+  tosa: { icon: Scissors, color: 'text-cyan-500', gradient: 'from-cyan-500/20 to-cyan-500/5', label: 'Tosa' },
   combo: { icon: Sparkles, color: 'text-amber-500', gradient: 'from-amber-500/20 to-amber-500/5', label: 'Combo' },
 };
 

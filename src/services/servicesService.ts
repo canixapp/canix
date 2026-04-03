@@ -31,10 +31,38 @@ export async function getActiveServices(): Promise<ServiceRow[]> {
   return all.filter(s => s.active !== false);
 }
 
-export async function createService(data: Omit<ServiceRow, 'id' | 'petshop_id'>): Promise<ServiceRow> {
+export interface ServiceInsert {
+  name: string;
+  description: string | null;
+  category: string;
+  icon: string | null;
+  active?: boolean | null;
+  price_pequeno?: number | null;
+  price_medio?: number | null;
+  price_grande?: number | null;
+  duration_minutes?: number | null;
+  sort_order?: number | null;
+  petshop_id: string;
+}
+
+export interface ServiceUpdate {
+  name?: string;
+  description?: string | null;
+  category?: string;
+  icon?: string | null;
+  active?: boolean | null;
+  price_pequeno?: number | null;
+  price_medio?: number | null;
+  price_grande?: number | null;
+  duration_minutes?: number | null;
+  sort_order?: number | null;
+}
+
+export async function createService(data: Omit<ServiceInsert, 'petshop_id'>): Promise<ServiceRow> {
+  const insertData: ServiceInsert = { ...data, petshop_id: PETSHOP_ID };
   const { data: row, error } = await supabase
     .from('services')
-    .insert({ ...data, petshop_id: PETSHOP_ID } as any)
+    .insert(insertData)
     .select()
     .single();
   if (error) { 
@@ -44,12 +72,10 @@ export async function createService(data: Omit<ServiceRow, 'id' | 'petshop_id'>)
   return row as ServiceRow;
 }
 
-export async function updateService(id: string, data: Partial<ServiceRow>): Promise<boolean> {
-  // Strip read-only / non-column fields to avoid Supabase errors
-  const { id: _id, petshop_id: _pid, ...payload } = data as any;
+export async function updateService(id: string, data: ServiceUpdate): Promise<boolean> {
   const { error } = await supabase
     .from('services')
-    .update(payload)
+    .update(data)
     .eq('id', id);
   if (error) {
     console.error('updateService error:', error);

@@ -34,7 +34,7 @@ export function TestModeIndicator() {
     pro: { icon: Crown, color: 'bg-amber-500 text-white' },
     basico: { icon: User, color: 'bg-slate-500 text-white' },
     cliente: { icon: User, color: 'bg-sky-500 text-white' },
-    demo: { icon: Database, color: 'bg-violet-500 text-white' },
+    demo: { icon: Database, color: 'bg-cyan-500 text-white' },
   };
 
   const handleDisableClientMode = () => {

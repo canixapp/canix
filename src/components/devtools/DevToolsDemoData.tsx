@@ -54,8 +54,8 @@ export function DevToolsDemoData() {
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-violet-500/10 shrink-0">
-                <Database className="w-5 h-5 text-violet-500" />
+              <div className="p-2 rounded-xl bg-cyan-500/10 shrink-0">
+                <Database className="w-5 h-5 text-cyan-500" />
               </div>
               <div>
                 <p className="font-semibold text-sm text-foreground">Modo Demonstração</p>
@@ -67,7 +67,7 @@ export function DevToolsDemoData() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Badge variant={demoModeActive ? 'default' : 'outline'} className={demoModeActive ? 'bg-violet-600 text-white' : ''}>
+              <Badge variant={demoModeActive ? 'default' : 'outline'} className={demoModeActive ? 'bg-cyan-600 text-white' : ''}>
                 {demoModeActive ? 'Ativo' : 'Inativo'}
               </Badge>
               <Switch checked={demoModeActive} onCheckedChange={toggleDemoMode} />
@@ -130,7 +130,7 @@ export function DevToolsDemoData() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs flex items-center gap-1.5">
-                <DollarSign className="w-3.5 h-3.5 text-violet-500" /> Receita (R$)
+                <DollarSign className="w-3.5 h-3.5 text-cyan-500" /> Receita (R$)
               </Label>
               <Input
                 type="number"
@@ -150,7 +150,7 @@ export function DevToolsDemoData() {
               Salvar config
             </Button>
             {demoModeActive && (
-              <Button variant="outline" size="sm" className="gap-1.5 min-h-[36px] text-violet-600 border-violet-300 hover:bg-violet-50 dark:text-violet-400 dark:border-violet-700 dark:hover:bg-violet-950" onClick={handleRegenerate}>
+              <Button variant="outline" size="sm" className="gap-1.5 min-h-[36px] text-cyan-600 border-cyan-300 hover:bg-cyan-50 dark:text-cyan-400 dark:border-cyan-700 dark:hover:bg-cyan-950" onClick={handleRegenerate}>
                 <RefreshCw className="w-3.5 h-3.5" /> Regenerar dados
               </Button>
             )}
@@ -160,9 +160,9 @@ export function DevToolsDemoData() {
 
       {/* Generated data view */}
       {demoData && (
-        <Card className="shadow-sm border-violet-500/20">
+        <Card className="shadow-sm border-cyan-500/20">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2 text-violet-600 dark:text-violet-400">
+            <CardTitle className="text-sm flex items-center gap-2 text-cyan-600 dark:text-cyan-400">
               <Database className="w-4 h-4" />
               Dados Gerados
             </CardTitle>

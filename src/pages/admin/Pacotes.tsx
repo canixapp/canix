@@ -15,6 +15,8 @@ import { addDays, format } from 'date-fns';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import * as profilesService from '@/services/profilesService';
+import * as packagesService from '@/services/packagesService';
 
 const emptyPet = { name: '', size: '', breed: '' };
 
@@ -28,7 +30,7 @@ export default function Pacotes() {
   const [addOpen, setAddOpen] = useState(false);
   const [phone, setPhone] = useState('');
   const [phoneLookupDone, setPhoneLookupDone] = useState(false);
-  const [foundTutor, setFoundTutor] = useState<any>(null);
+  const [foundTutor, setFoundTutor] = useState<profilesService.ProfileRow | null>(null);
   const [ownerName, setOwnerName] = useState('');
   const [selectedPetId, setSelectedPetId] = useState('');
   const [isAddingNewPet, setIsAddingNewPet] = useState(false);
@@ -38,13 +40,13 @@ export default function Pacotes() {
   const [observation, setObservation] = useState('');
 
   // Detail/edit modal
-  const [detailPkg, setDetailPkg] = useState<any>(null);
+  const [detailPkg, setDetailPkg] = useState<packagesService.CustomerPackageRow | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [editObs, setEditObs] = useState('');
   const [editStartDate, setEditStartDate] = useState('');
 
   // Schedule next day modal
-  const [schedulePackage, setSchedulePackage] = useState<any>(null);
+  const [schedulePackage, setSchedulePackage] = useState<packagesService.CustomerPackageRow | null>(null);
   const [schedDate, setSchedDate] = useState('');
   const [schedTime, setSchedTime] = useState('');
   const [schedService, setSchedService] = useState('Banho do Pacote');
@@ -66,7 +68,7 @@ export default function Pacotes() {
     if (tutor) {
       setFoundTutor(tutor);
       setOwnerName(tutor.name);
-      setSelectedPetId((tutor as any).pets?.[0]?.id || '');
+      setSelectedPetId(tutor.pets?.[0]?.id || '');
       setIsAddingNewPet(false);
       setNewPets([{ ...emptyPet }]);
     } else {
@@ -112,7 +114,7 @@ export default function Pacotes() {
     resetModal();
   };
 
-  const getNextDate = (pkg: any) => {
+  const getNextDate = (pkg: packagesService.CustomerPackageRow) => {
     try {
       const start = new Date(pkg.start_date);
       const days = 7;
@@ -123,7 +125,7 @@ export default function Pacotes() {
     } catch { return '—'; }
   };
 
-  const getNextDateISO = (pkg: any) => {
+  const getNextDateISO = (pkg: packagesService.CustomerPackageRow) => {
     try {
       const start = new Date(pkg.start_date);
       const days = 7;
@@ -134,7 +136,7 @@ export default function Pacotes() {
     } catch { return new Date().toISOString().split('T')[0]; }
   };
 
-  const openScheduleModal = (pkg: any) => {
+  const openScheduleModal = (pkg: packagesService.CustomerPackageRow) => {
     setSchedulePackage(pkg);
     setSchedDate(getNextDateISO(pkg));
     setSchedTime('');
@@ -153,16 +155,16 @@ export default function Pacotes() {
       time: schedTime,
       price: 0,
       origin: 'pacote',
-      pets: [{ pet_id: schedulePackage.pet_id, pet_name: 'Pet do Pacote' }]
+      pets: [{ pet_id: schedulePackage.pet_id || '', pet_name: 'Pet do Pacote' }]
     });
     toast.success('Agendamento do pacote criado!');
     setSchedulePackage(null);
   };
 
-  const openDetail = (pkg: any) => {
+  const openDetail = (pkg: packagesService.CustomerPackageRow) => {
     setDetailPkg(pkg);
     setEditMode(false);
-    setEditObs(pkg.observation);
+    setEditObs(pkg.observation || '');
     setEditStartDate(pkg.start_date);
   };
 
@@ -379,11 +381,10 @@ export default function Pacotes() {
                     </SelectContent>
                   </Select>
 
-                  <Label>Selecione o Pet</Label>
                   <Select value={selectedPetId} onValueChange={setSelectedPetId}>
                     <SelectTrigger className="rounded-xl"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                     <SelectContent>
-                      {foundTutor.pets?.map((p: any) => (
+                      {foundTutor.pets?.map(p => (
                         <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                       ))}
                     </SelectContent>

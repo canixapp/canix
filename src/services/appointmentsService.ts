@@ -36,6 +36,41 @@ export interface AppointmentPetRow {
   pet_breed: string | null;
 }
 
+export interface AppointmentInsert {
+  petshop_id: string;
+  customer_id: string;
+  service_id: string | null;
+  service_name: string;
+  date: string;
+  time: string;
+  status: string;
+  price: number;
+  payment_status: string;
+  payment_method?: string | null;
+  payment_amount?: number | null;
+  origin?: string;
+  notes?: string;
+}
+
+export interface AppointmentUpdate {
+  status?: string;
+  payment_status?: string;
+  payment_method?: string | null;
+  payment_amount?: number | null;
+  date?: string;
+  time?: string;
+  completed_at?: string | null;
+  cancel_reason?: string | null;
+}
+
+export interface AppointmentPetInsert {
+  appointment_id: string;
+  pet_id: string;
+  pet_name: string;
+  pet_size: string | null;
+  pet_breed: string | null;
+}
+
 export async function getAppointments(): Promise<AppointmentRow[]> {
   const { data, error } = await supabase
     .from('appointments')
@@ -84,21 +119,23 @@ export async function createAppointment(data: {
   notes?: string;
   pets: { pet_id: string; pet_name: string; pet_size?: string; pet_breed?: string }[];
 }): Promise<AppointmentRow | null> {
+  const insertData: AppointmentInsert = {
+    petshop_id: PETSHOP_ID,
+    customer_id: data.customer_id,
+    service_name: data.service_name,
+    service_id: data.service_id || null,
+    date: data.date,
+    time: data.time,
+    price: data.price || 0,
+    origin: data.origin || 'sistema',
+    notes: data.notes || '',
+    status: 'pendente',
+    payment_status: 'nao_cobrado',
+  };
+
   const { data: apt, error } = await supabase
     .from('appointments')
-    .insert({
-      petshop_id: PETSHOP_ID,
-      customer_id: data.customer_id,
-      service_name: data.service_name,
-      service_id: data.service_id || null,
-      date: data.date,
-      time: data.time,
-      price: data.price || 0,
-      origin: data.origin || 'sistema',
-      notes: data.notes || '',
-      status: 'pendente',
-      payment_status: 'nao_cobrado',
-    } as any)
+    .insert(insertData)
     .select()
     .single();
   
@@ -109,14 +146,14 @@ export async function createAppointment(data: {
   
   // Insert appointment pets
   if (data.pets.length > 0) {
-    const petRows = data.pets.map(p => ({
+    const petRows: AppointmentPetInsert[] = data.pets.map(p => ({
       appointment_id: apt.id,
       pet_id: p.pet_id,
       pet_name: p.pet_name,
       pet_size: p.pet_size || null,
       pet_breed: p.pet_breed || null,
     }));
-     const { error: petsError } = await supabase.from('appointment_pets').insert(petRows as any);
+     const { error: petsError } = await supabase.from('appointment_pets').insert(petRows);
      if (petsError) console.error('appointment_pets insert error:', petsError.message, petsError.details, petsError.hint);
   }
   
@@ -128,7 +165,7 @@ export async function updateAppointmentStatus(
   status: AppointmentStatus,
   extra?: { cancel_reason?: string; completed_at?: string }
 ): Promise<boolean> {
-  const updates: any = { status, ...extra };
+  const updates: AppointmentUpdate = { status, ...extra };
   if (status === 'realizado' && !updates.completed_at) {
     updates.completed_at = new Date().toISOString();
   }
@@ -142,17 +179,23 @@ export async function setAppointmentPayment(
   payment_method?: PaymentMethod,
   payment_amount?: number
 ): Promise<boolean> {
+  const updates: AppointmentUpdate = { 
+    payment_status, 
+    payment_method: payment_method || null, 
+    payment_amount: payment_amount || null 
+  };
   const { error } = await supabase
     .from('appointments')
-    .update({ payment_status, payment_method: payment_method || null, payment_amount: payment_amount || null } as any)
+    .update(updates)
     .eq('id', id);
   return !error;
 }
 
 export async function rescheduleAppointment(id: string, date: string, time: string): Promise<boolean> {
+  const updates: AppointmentUpdate = { date, time, status: 'remarcado' };
   const { error } = await supabase
     .from('appointments')
-    .update({ date, time, status: 'remarcado' } as any)
+    .update(updates)
     .eq('id', id);
   return !error;
 }

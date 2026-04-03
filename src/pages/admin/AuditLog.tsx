@@ -11,7 +11,7 @@ import { motion } from 'framer-motion';
 const ENTITY_CONFIG: Record<string, { label: string; icon: typeof Settings; color: string; bg: string }> = {
   settings: { label: 'Configurações', icon: Settings, color: 'text-primary', bg: 'bg-primary/10' },
   services: { label: 'Serviços', icon: FileText, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10' },
-  packages: { label: 'Pacotes', icon: Package, color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-500/10' },
+  packages: { label: 'Pacotes', icon: Package, color: 'text-cyan-600 dark:text-cyan-400', bg: 'bg-cyan-500/10' },
   gallery: { label: 'Galeria', icon: Image, color: 'text-pink-600 dark:text-pink-400', bg: 'bg-pink-500/10' },
   reviews: { label: 'Avaliações', icon: Star, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10' },
   appointments: { label: 'Agendamentos', icon: Calendar, color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-500/10' },
@@ -107,7 +107,7 @@ export default function AuditLog() {
         {[
           { label: 'Total', value: logs.length, icon: History, color: 'text-primary', bg: 'bg-primary/10' },
           { label: 'Configurações', value: logs.filter(l => l.entity === 'settings').length, icon: Settings, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10' },
-          { label: 'Serviços', value: logs.filter(l => l.entity === 'services').length, icon: FileText, color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-500/10' },
+          { label: 'Serviços', value: logs.filter(l => l.entity === 'services').length, icon: FileText, color: 'text-cyan-600 dark:text-cyan-400', bg: 'bg-cyan-500/10' },
           { label: 'Outros', value: logs.filter(l => l.entity !== 'settings' && l.entity !== 'services').length, icon: Sparkles, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10' },
         ].map(stat => (
           <div key={stat.label} className="bg-card rounded-2xl border border-border/60 p-4 flex items-center gap-3">

@@ -77,8 +77,8 @@ export function EstoquePro() {
     <ProCard>
       <div id="pro-estoque" className="space-y-5">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-violet-500/10">
-            <ShoppingBag className="w-5 h-5 text-violet-500" />
+          <div className="p-2.5 rounded-xl bg-cyan-500/10">
+            <ShoppingBag className="w-5 h-5 text-cyan-500" />
           </div>
           <div>
             <h3 className="text-lg font-bold text-foreground">Estoque</h3>
@@ -91,7 +91,7 @@ export function EstoquePro() {
 
         <div className="grid grid-cols-2 gap-3">
           {[
-            { label: 'Produtos', value: '0', icon: Package, color: 'text-violet-500', bg: 'bg-violet-500/10' },
+            { label: 'Produtos', value: '0', icon: Package, color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
             { label: 'Estoque baixo', value: '0', icon: AlertTriangle, color: 'text-amber-500', bg: 'bg-amber-500/10' },
           ].map(s => (
             <Card key={s.label} className="border-border/30">

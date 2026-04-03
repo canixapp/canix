@@ -1,4 +1,9 @@
-﻿import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
+
+export interface GalleryLikeInsert {
+  photo_id: string;
+  user_id: string;
+}
 
 export async function toggleLike(photoId: string, userId: string): Promise<{ liked: boolean; count: number }> {
   // Check if already liked
@@ -12,7 +17,8 @@ export async function toggleLike(photoId: string, userId: string): Promise<{ lik
   if (existing) {
     await supabase.from('gallery_likes').delete().eq('id', existing.id);
   } else {
-    await supabase.from('gallery_likes').insert({ photo_id: photoId, user_id: userId } as any);
+    const insertData: GalleryLikeInsert = { photo_id: photoId, user_id: userId };
+    await supabase.from('gallery_likes').insert(insertData);
   }
 
   const { count } = await supabase

@@ -357,8 +357,8 @@ export default function Servicos() {
         toast.success('Serviço criado! Já disponível no site.');
       }
       setEditOpen(false);
-    } catch (err: any) {
-      const msg = err?.message || '';
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes('check constraint') || msg.includes('category')) {
         toast.error('Categoria inválida. Verifique se o tipo selecionado é válido.');
       } else {
@@ -659,7 +659,7 @@ export default function Servicos() {
             <Label className="text-sm font-medium">Valores por porte (R$)</Label>
             <div className="grid grid-cols-3 gap-3">
               {sizeLabels.map(({ key, label, emoji }) => {
-                const priceKey = key === 'pequeno' ? 'price_pequeno' : key === 'medio' ? 'price_medio' : 'price_grande';
+                const priceKey = key === 'pequeno' ? 'price_pequeno' : (key === 'medio' ? 'price_medio' : 'price_grande');
                 return (
                   <div key={key} className="space-y-1.5">
                     <span className="text-xs text-muted-foreground font-medium">{emoji} {label}</span>
@@ -669,7 +669,7 @@ export default function Servicos() {
                         type="number"
                         min={0}
                         step={5}
-                        value={(form as any)[priceKey] || ''}
+                        value={(form[priceKey as keyof typeof form] as number | undefined) || ''}
                         onChange={e => setForm({ ...form, [priceKey]: parseFloat(e.target.value) || 0 })}
                         className="pl-9 h-10 rounded-xl text-base font-semibold tabular-nums"
                       />

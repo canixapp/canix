@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useAdmin } from '@/contexts/AdminContext';
 import { supabase } from '@/lib/supabase';
 import { toE164 } from '@/lib/phoneUtils';
@@ -52,9 +52,9 @@ interface TutorInfo {
 const statusConfig: Record<string, { label: string; color: string }> = {
   pendente: { label: 'Pendente', color: 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700' },
   confirmado: { label: 'Confirmado', color: 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700' },
-  realizado: { label: 'ConcluÃ­do', color: 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700' },
+  realizado: { label: 'Concluído', color: 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700' },
   cancelado: { label: 'Cancelado', color: 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700' },
-  remarcado: { label: 'Remarcado', color: 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700' },
+  remarcado: { label: 'Remarcado', color: 'bg-teal-100 text-teal-800 border-teal-300 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-700' },
 };
 
 type PeriodFilter = 'todos' | 'hoje' | 'amanha' | '7dias' | '30dias' | 'personalizado';
@@ -133,7 +133,7 @@ export default function Agendamentos() {
     const raw = modalPhone;
     const normalized = raw.replace(/\D/g, '');
     if (normalized.length < 10) {
-      toast.error('Telefone invÃ¡lido. Informe DDD + nÃºmero.');
+      toast.error('Telefone inválido. Informe DDD + número.');
       return;
     }
 
@@ -241,7 +241,7 @@ export default function Agendamentos() {
     }
 
     if (!modalPhone || !modalOwnerName || !petName || !modalService || !modalDate || !modalTime) {
-      toast.error('Preencha todos os campos obrigatÃ³rios');
+      toast.error('Preencha todos os campos obrigatórios');
       return;
     }
 
@@ -304,7 +304,7 @@ export default function Agendamentos() {
     const clientPhone = apt.customer_phone || extractPhoneFromAppointmentNotes(apt.notes);
 
     if (!openWhatsAppConversation({ phone: clientPhone, message })) {
-      toast.error('NÃ£o hÃ¡ telefone cadastrado para este cliente.');
+      toast.error('Não há telefone cadastrado para este cliente.');
       return false;
     }
 
@@ -320,7 +320,7 @@ export default function Agendamentos() {
     if (apt) {
       const clientName = apt.customer_name || 'cliente';
       const petName = getPetName(apt);
-      const msg = `OlÃ¡, ${clientName}! Seu agendamento do pet ${petName} foi remarcado para ${dateStr} Ã s ${rescheduleTime}, serviÃ§o ${apt.service_name}.`;
+      const msg = `Olá, ${clientName}! Seu agendamento do pet ${petName} foi remarcado para ${dateStr} às ${rescheduleTime}, serviço ${apt.service_name}.`;
       openAdminWhatsApp(apt, msg);
     }
 
@@ -337,7 +337,7 @@ export default function Agendamentos() {
     if (apt) {
       const clientName = apt.customer_name || 'cliente';
       const petName = getPetName(apt);
-      const msg = `OlÃ¡, ${clientName}. O agendamento do pet ${petName} marcado para ${apt.date} Ã s ${apt.time}, serviÃ§o ${apt.service_name}, foi cancelado.${reason ? ` Motivo: ${reason}.` : ''}`;
+      const msg = `Olá, ${clientName}. O agendamento do pet ${petName} marcado para ${apt.date} às ${apt.time}, serviço ${apt.service_name}, foi cancelado.${reason ? ` Motivo: ${reason}.` : ''}`;
       openAdminWhatsApp(apt, msg);
     }
 
@@ -349,7 +349,7 @@ export default function Agendamentos() {
   const handleAdminConfirm = (apt: AppointmentRow) => {
     const clientName = apt.customer_name || 'cliente';
     const petName = getPetName(apt);
-    const msg = `OlÃ¡, ${clientName}! Seu agendamento para o pet ${petName} foi confirmado para ${apt.date} Ã s ${apt.time}, serviÃ§o ${apt.service_name}.`;
+    const msg = `Olá, ${clientName}! Seu agendamento para o pet ${petName} foi confirmado para ${apt.date} às ${apt.time}, serviço ${apt.service_name}.`;
 
     openAdminWhatsApp(apt, msg);
     void confirmAppointment(apt.id);
@@ -362,16 +362,16 @@ export default function Agendamentos() {
 
     switch (apt.status) {
       case 'pendente':
-        msg = `OlÃ¡, ${clientName}! Aqui Ã© do PetCÃ£o ðŸ˜Š\nRecebemos sua solicitaÃ§Ã£o de agendamento para ${apt.date} Ã s ${apt.time}, serviÃ§o ${apt.service_name}. Podemos confirmar?`;
+        msg = `Olá, ${clientName}! Aqui é do PetCão 😊\nRecebemos sua solicitação de agendamento para ${apt.date} às ${apt.time}, serviço ${apt.service_name}. Podemos confirmar?`;
         break;
       case 'confirmado':
-        msg = `OlÃ¡, ${clientName}! Seu agendamento do pet ${petName} em ${apt.date} Ã s ${apt.time}, serviÃ§o ${apt.service_name}, estÃ¡ confirmado. Ficamos Ã  disposiÃ§Ã£o!`;
+        msg = `Olá, ${clientName}! Seu agendamento do pet ${petName} em ${apt.date} às ${apt.time}, serviço ${apt.service_name}, está confirmado. Ficamos à disposição!`;
         break;
       case 'realizado':
-        msg = `OlÃ¡, ${clientName}! Queremos tirar uma dÃºvida rÃ¡pida sobre o atendimento do ${petName}. Podemos conversar?`;
+        msg = `Olá, ${clientName}! Queremos tirar uma dúvida rápida sobre o atendimento do ${petName}. Podemos conversar?`;
         break;
       default:
-        msg = `OlÃ¡, ${clientName}! Aqui Ã© do PetCÃ£o ðŸ˜Š`;
+        msg = `Olá, ${clientName}! Aqui é do PetCão 😊`;
     }
 
     openAdminWhatsApp(apt, msg);
@@ -409,14 +409,14 @@ export default function Agendamentos() {
             <SelectTrigger className="mt-0.5 h-9 text-sm"><SelectValue placeholder="Porte" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="Pequeno">Pequeno</SelectItem>
-              <SelectItem value="MÃ©dio">MÃ©dio</SelectItem>
+              <SelectItem value="Médio">Médio</SelectItem>
               <SelectItem value="Grande">Grande</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div>
-          <Label className="text-[11px]">RaÃ§a</Label>
-          <Input value={pet.breed} onChange={e => onChange({ ...pet, breed: e.target.value })} placeholder="RaÃ§a" className="mt-0.5 h-9 text-sm" />
+          <Label className="text-[11px]">Raça</Label>
+          <Input value={pet.breed} onChange={e => onChange({ ...pet, breed: e.target.value })} placeholder="Raça" className="mt-0.5 h-9 text-sm" />
         </div>
       </div>
     </div>
@@ -435,7 +435,7 @@ export default function Agendamentos() {
     { key: 'todos', label: 'Todos', count: appointments.length },
     { key: 'pendente', label: 'Pendente', count: appointments.filter(a => a.status === 'pendente').length },
     { key: 'confirmado', label: 'Confirmado', count: appointments.filter(a => a.status === 'confirmado').length },
-    { key: 'realizado', label: 'ConcluÃ­do', count: appointments.filter(a => a.status === 'realizado').length },
+    { key: 'realizado', label: 'Concluído', count: appointments.filter(a => a.status === 'realizado').length },
     { key: 'cancelado', label: 'Cancelado', count: appointments.filter(a => a.status === 'cancelado').length },
     { key: 'remarcado', label: 'Remarcado', count: appointments.filter(a => a.status === 'remarcado').length },
   ];
@@ -454,7 +454,7 @@ export default function Agendamentos() {
       {/* â•â•â• HEADER â•â•â• */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 md:gap-4">
         <div className="space-y-0.5 md:space-y-1">
-          <h1 className="text-xl md:text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{getGreeting()} ðŸ‘‹</h1>
+          <h1 className="text-xl md:text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{getGreeting()} 👋</h1>
           <p className="text-xs md:text-sm text-muted-foreground capitalize">{todayFormatted}</p>
         </div>
 
@@ -587,18 +587,18 @@ export default function Agendamentos() {
           </div>
 
           <div className="md:w-48">
-            <label className="text-[10px] font-medium text-muted-foreground mb-1 block md:hidden">PerÃ­odo</label>
+            <label className="text-[10px] font-medium text-muted-foreground mb-1 block md:hidden">Período</label>
             <Select value={periodFilter} onValueChange={(v) => setPeriodFilter(v as PeriodFilter)}>
               <SelectTrigger className="h-11 md:h-9 text-xs rounded-xl border-border/50 bg-card shadow-sm shadow-black/[0.03] hover:shadow-md hover:border-border transition-all duration-200">
                 <CalendarIcon className="w-3.5 h-3.5 mr-1.5 text-primary/60" />
-                <SelectValue placeholder="PerÃ­odo" />
+                <SelectValue placeholder="Período" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos</SelectItem>
                 <SelectItem value="hoje">Hoje</SelectItem>
-                <SelectItem value="amanha">AmanhÃ£</SelectItem>
-                <SelectItem value="7dias">PrÃ³ximos 7 dias</SelectItem>
-                <SelectItem value="30dias">PrÃ³ximos 30 dias</SelectItem>
+                <SelectItem value="amanha">Amanhã</SelectItem>
+                <SelectItem value="7dias">Próximos 7 dias</SelectItem>
+                <SelectItem value="30dias">Próximos 30 dias</SelectItem>
                 <SelectItem value="personalizado">Personalizado</SelectItem>
               </SelectContent>
             </Select>
@@ -611,7 +611,7 @@ export default function Agendamentos() {
                 <input type="date" className="block w-full border border-border/50 rounded-xl px-3 py-2 text-xs bg-card shadow-sm h-11 md:h-9" onChange={e => setCustomRange(prev => ({ ...prev, from: e.target.value ? new Date(e.target.value) : undefined }))} />
               </div>
               <div className="flex-1">
-                <label className="text-[10px] text-muted-foreground">AtÃ©</label>
+                <label className="text-[10px] text-muted-foreground">Até</label>
                 <input type="date" className="block w-full border border-border/50 rounded-xl px-3 py-2 text-xs bg-card shadow-sm h-11 md:h-9" onChange={e => setCustomRange(prev => ({ ...prev, to: e.target.value ? new Date(e.target.value) : undefined }))} />
               </div>
             </div>
@@ -634,21 +634,21 @@ export default function Agendamentos() {
               apt.status === 'confirmado' ? 'bg-blue-500' :
               apt.status === 'realizado' ? 'bg-emerald-500' :
               apt.status === 'cancelado' ? 'bg-red-400' :
-              apt.status === 'remarcado' ? 'bg-violet-500' : 'bg-muted';
+              apt.status === 'remarcado' ? 'bg-cyan-500' : 'bg-muted';
 
             const avatarBg =
               apt.status === 'pendente' ? 'bg-amber-100 dark:bg-amber-900/30' :
               apt.status === 'confirmado' ? 'bg-blue-100 dark:bg-blue-900/30' :
               apt.status === 'realizado' ? 'bg-emerald-100 dark:bg-emerald-900/30' :
               apt.status === 'cancelado' ? 'bg-red-100 dark:bg-red-900/30' :
-              apt.status === 'remarcado' ? 'bg-violet-100 dark:bg-violet-900/30' : 'bg-muted';
+              apt.status === 'remarcado' ? 'bg-cyan-100 dark:bg-cyan-900/30' : 'bg-muted';
 
             const avatarText =
               apt.status === 'pendente' ? 'text-amber-600 dark:text-amber-400' :
               apt.status === 'confirmado' ? 'text-blue-600 dark:text-blue-400' :
               apt.status === 'realizado' ? 'text-emerald-600 dark:text-emerald-400' :
               apt.status === 'cancelado' ? 'text-red-500 dark:text-red-400' :
-              apt.status === 'remarcado' ? 'text-violet-600 dark:text-violet-400' : 'text-muted-foreground';
+              apt.status === 'remarcado' ? 'text-cyan-600 dark:text-cyan-400' : 'text-muted-foreground';
 
             // Build action buttons array for this appointment
             const actionButtons: React.ReactNode[] = [];
@@ -748,7 +748,7 @@ export default function Agendamentos() {
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <Badge variant="outline" className={`text-[11px] border rounded-lg px-2.5 py-0.5 font-semibold ${cfg.color}`}>{cfg.label}</Badge>
-                        {apt.origin === 'pacote' && <Badge variant="outline" className="text-[11px] bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-700 rounded-lg">Pacote</Badge>}
+                        {apt.origin === 'pacote' && <Badge variant="outline" className="text-[11px] bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-700 rounded-lg">Pacote</Badge>}
                         {apt.status === 'realizado' && apt.payment_status === 'pago' && <Badge variant="outline" className="text-[11px] bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700 rounded-lg">Pago</Badge>}
                         {apt.status === 'realizado' && apt.payment_status === 'pendente' && <Badge variant="outline" className="text-[11px] bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700 rounded-lg">Pgto Pendente</Badge>}
                       </div>
@@ -792,7 +792,7 @@ export default function Agendamentos() {
                         {apt.price != null && apt.price > 0 && (
                           <span className="text-xs font-semibold text-foreground">R$ {apt.price}</span>
                         )}
-                        {apt.origin === 'pacote' && <Badge variant="outline" className="text-[10px] bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-700 rounded-lg px-2 py-0.5">Pacote</Badge>}
+                        {apt.origin === 'pacote' && <Badge variant="outline" className="text-[10px] bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-700 rounded-lg px-2 py-0.5">Pacote</Badge>}
                         {apt.status === 'realizado' && apt.payment_status === 'pago' && <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700 rounded-lg px-2 py-0.5">Pago</Badge>}
                         {apt.status === 'realizado' && apt.payment_status === 'pendente' && <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700 rounded-lg px-2 py-0.5">Pgto Pendente</Badge>}
                       </div>
@@ -822,7 +822,7 @@ export default function Agendamentos() {
               <CalendarIcon className="w-8 h-8 text-muted-foreground/50" />
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-1">Nenhum agendamento encontrado</h3>
-            <p className="text-sm text-muted-foreground mb-6">NÃ£o hÃ¡ agendamentos para este perÃ­odo ou filtro.</p>
+            <p className="text-sm text-muted-foreground mb-6">Não há agendamentos para este período ou filtro.</p>
             <Button onClick={() => setNewAptModal(true)} variant="outline" className="rounded-xl">
               <Plus className="w-4 h-4 mr-2" /> Adicionar primeiro agendamento
             </Button>
@@ -840,7 +840,7 @@ export default function Agendamentos() {
             </div>
             {rescheduleDate && (
               <div>
-                <label className="text-sm font-medium text-foreground mb-2 block">HorÃ¡rio</label>
+                <label className="text-sm font-medium text-foreground mb-2 block">Horário</label>
                 <div className="grid grid-cols-4 gap-2">
                   {timeSlots.map(t => (
                     <button key={t} onClick={() => setRescheduleTime(t)} className={`py-2 px-3 rounded-lg border text-sm font-medium transition-colors ${rescheduleTime === t ? 'border-primary bg-primary text-primary-foreground' : 'border-border hover:border-primary/50'}`}>{t}</button>
@@ -851,7 +851,7 @@ export default function Agendamentos() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRescheduleModal({ open: false, id: '' })}>Cancelar</Button>
-            <Button onClick={handleReschedule} disabled={!rescheduleDate || !rescheduleTime}>Confirmar RemarcaÃ§Ã£o</Button>
+            <Button onClick={handleReschedule} disabled={!rescheduleDate || !rescheduleTime}>Confirmar Remarcação</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -918,7 +918,7 @@ export default function Agendamentos() {
                     </motion.p>
                   )}
                   {phoneLookupDone && !foundTutor && (
-                    <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-muted-foreground mt-2">Novo cliente â€” preencha os dados abaixo.</motion.p>
+                    <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-muted-foreground mt-2">Novo cliente — preencha os dados abaixo.</motion.p>
                   )}
                 </div>
 
@@ -957,7 +957,7 @@ export default function Agendamentos() {
                       </SelectTrigger>
                       <SelectContent>
                         {foundTutor.pets.map(p => (
-                          <SelectItem key={p.id} value={p.id}>{p.name}{p.size ? ` â€¢ ${p.size}` : ''}{p.breed ? ` â€¢ ${p.breed}` : ''}</SelectItem>
+                          <SelectItem key={p.id} value={p.id}>{p.name}{p.size ? ` • ${p.size}` : ''}{p.breed ? ` • ${p.breed}` : ''}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -991,12 +991,12 @@ export default function Agendamentos() {
                             <Label className="text-xs text-muted-foreground mb-1.5 block">Porte</Label>
                             <Select value={newPets[0].size} onValueChange={v => setNewPets([{ ...newPets[0], size: v }])}>
                               <SelectTrigger className="h-[44px] text-base md:text-sm rounded-xl border-border/40"><SelectValue placeholder="Porte" /></SelectTrigger>
-                              <SelectContent><SelectItem value="Pequeno">Pequeno</SelectItem><SelectItem value="MÃ©dio">MÃ©dio</SelectItem><SelectItem value="Grande">Grande</SelectItem></SelectContent>
+                              <SelectContent><SelectItem value="Pequeno">Pequeno</SelectItem><SelectItem value="Médio">Médio</SelectItem><SelectItem value="Grande">Grande</SelectItem></SelectContent>
                             </Select>
                           </div>
                           <div>
-                            <Label className="text-xs text-muted-foreground mb-1.5 block">RaÃ§a</Label>
-                            <Input value={newPets[0].breed} onChange={e => setNewPets([{ ...newPets[0], breed: e.target.value }])} placeholder="RaÃ§a" className="h-[44px] text-base md:text-sm rounded-xl border-border/40 bg-card" />
+                            <Label className="text-xs text-muted-foreground mb-1.5 block">Raça</Label>
+                            <Input value={newPets[0].breed} onChange={e => setNewPets([{ ...newPets[0], breed: e.target.value }])} placeholder="Raça" className="h-[44px] text-base md:text-sm rounded-xl border-border/40 bg-card" />
                           </div>
                         </div>
                       </div>
@@ -1025,12 +1025,12 @@ export default function Agendamentos() {
                             <Label className="text-xs text-muted-foreground mb-1.5 block">Porte</Label>
                             <Select value={pet.size} onValueChange={v => setNewPets(prev => prev.map((p, idx) => idx === i ? { ...p, size: v } : p))}>
                               <SelectTrigger className="h-[44px] text-base md:text-sm rounded-xl border-border/40"><SelectValue placeholder="Porte" /></SelectTrigger>
-                              <SelectContent><SelectItem value="Pequeno">Pequeno</SelectItem><SelectItem value="MÃ©dio">MÃ©dio</SelectItem><SelectItem value="Grande">Grande</SelectItem></SelectContent>
+                              <SelectContent><SelectItem value="Pequeno">Pequeno</SelectItem><SelectItem value="Médio">Médio</SelectItem><SelectItem value="Grande">Grande</SelectItem></SelectContent>
                             </Select>
                           </div>
                           <div>
-                            <Label className="text-xs text-muted-foreground mb-1.5 block">RaÃ§a</Label>
-                            <Input value={pet.breed} onChange={e => setNewPets(prev => prev.map((p, idx) => idx === i ? { ...p, breed: e.target.value } : p))} placeholder="RaÃ§a" className="h-[44px] text-base md:text-sm rounded-xl border-border/40 bg-card" />
+                            <Label className="text-xs text-muted-foreground mb-1.5 block">Raça</Label>
+                            <Input value={pet.breed} onChange={e => setNewPets(prev => prev.map((p, idx) => idx === i ? { ...p, breed: e.target.value } : p))} placeholder="Raça" className="h-[44px] text-base md:text-sm rounded-xl border-border/40 bg-card" />
                           </div>
                         </div>
                       </div>
@@ -1056,14 +1056,14 @@ export default function Agendamentos() {
             {/* â”€â”€ SECTION: ServiÃ§o â”€â”€ */}
             <div className="space-y-4">
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-[10px] bg-violet-500/8 flex items-center justify-center">
-                  <Scissors className="w-3.5 h-3.5 text-violet-600" />
+                <div className="w-7 h-7 rounded-[10px] bg-cyan-500/8 flex items-center justify-center">
+                  <Scissors className="w-3.5 h-3.5 text-cyan-600" />
                 </div>
-                <span className="text-[13px] font-semibold text-foreground">ServiÃ§o</span>
+                <span className="text-[13px] font-semibold text-foreground">Serviço</span>
               </div>
 
               <div>
-                <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Tipo de serviÃ§o</Label>
+                <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Tipo de serviço</Label>
                 <Select value={modalService} onValueChange={v => {
                   setModalService(v);
                   const svc = servicesList.find(s => s.name === v);
@@ -1077,7 +1077,7 @@ export default function Agendamentos() {
                   }
                 }}>
                   <SelectTrigger className="h-[44px] text-base md:text-sm rounded-xl border-border/40 bg-card focus-visible:ring-primary/20">
-                    <SelectValue placeholder="Selecione o serviÃ§o" />
+                    <SelectValue placeholder="Selecione o serviço" />
                   </SelectTrigger>
                   <SelectContent>
                     {servicesList.map(s => (
@@ -1097,7 +1097,7 @@ export default function Agendamentos() {
                 <div className="w-7 h-7 rounded-[10px] bg-blue-500/8 flex items-center justify-center">
                   <CalendarIcon className="w-3.5 h-3.5 text-blue-600" />
                 </div>
-                <span className="text-[13px] font-semibold text-foreground">Data e HorÃ¡rio</span>
+                <span className="text-[13px] font-semibold text-foreground">Data e Horário</span>
               </div>
 
               <div className="space-y-3">
@@ -1107,7 +1107,7 @@ export default function Agendamentos() {
                     <Input type="date" value={modalDate} onChange={e => setModalDate(e.target.value)} className="h-[44px] text-base md:text-sm rounded-xl border-border/40 bg-card focus-visible:ring-primary/20" />
                   </div>
                   <div>
-                    <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">HorÃ¡rio</Label>
+                    <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Horário</Label>
                     <Select value={modalTime} onValueChange={setModalTime}>
                       <SelectTrigger className="h-[44px] text-base md:text-sm rounded-xl border-border/40 bg-card focus-visible:ring-primary/20"><SelectValue placeholder="Hora" /></SelectTrigger>
                       <SelectContent>{timeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
@@ -1152,7 +1152,7 @@ export default function Agendamentos() {
                     })()}
                     {modalService && (
                       <div className="flex justify-between items-center">
-                        <span className="text-xs text-muted-foreground">ServiÃ§o</span>
+                        <span className="text-xs text-muted-foreground">Serviço</span>
                         <span className="text-xs font-medium text-foreground">{modalService}</span>
                       </div>
                     )}
@@ -1160,7 +1160,7 @@ export default function Agendamentos() {
                       <div className="flex justify-between items-center">
                         <span className="text-xs text-muted-foreground">Quando</span>
                         <span className="text-xs font-medium text-foreground">
-                          {modalDate && modalDate}{modalTime && ` Ã s ${modalTime}`}
+                          {modalDate && modalDate}{modalTime && ` às ${modalTime}`}
                         </span>
                       </div>
                     )}

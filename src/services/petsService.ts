@@ -13,6 +13,34 @@ export interface PetRow {
   updated_at: string;
 }
 
+export interface PetInsert {
+  owner_id: string;
+  petshop_id: string | null;
+  name: string;
+  size: string;
+  breed?: string | null;
+  photo_url?: string | null;
+  age?: string | null;
+  weight?: string | null;
+  behavior?: string | null;
+  allergies?: string | null;
+  coat_type?: string | null;
+  observations?: string | null;
+}
+
+export interface PetUpdate {
+  name?: string;
+  size?: string;
+  breed?: string | null;
+  photo_url?: string | null;
+  age?: string | null;
+  weight?: string | null;
+  behavior?: string | null;
+  allergies?: string | null;
+  coat_type?: string | null;
+  observations?: string | null;
+}
+
 export async function getPetsByOwner(ownerId: string): Promise<PetRow[]> {
   const { data, error } = await supabase
     .from('pets')
@@ -39,16 +67,18 @@ export async function createPet(data: {
   breed?: string;
   photo_url?: string;
 }): Promise<PetRow | null> {
+  const insertData: PetInsert = {
+    owner_id: data.owner_id,
+    petshop_id: PETSHOP_ID,
+    name: data.name,
+    size: data.size,
+    breed: data.breed || '',
+    photo_url: data.photo_url || null,
+  };
+
   const { data: row, error } = await supabase
     .from('pets')
-    .insert({
-      owner_id: data.owner_id,
-      petshop_id: PETSHOP_ID,
-      name: data.name,
-      size: data.size,
-      breed: data.breed || '',
-      photo_url: data.photo_url || null,
-    } as any)
+    .insert(insertData)
     .select()
     .single();
   if (error) { 
@@ -58,8 +88,8 @@ export async function createPet(data: {
   return row as PetRow;
 }
 
-export async function updatePet(id: string, data: Partial<PetRow>): Promise<boolean> {
-  const { error } = await supabase.from('pets').update(data as any).eq('id', id);
+export async function updatePet(id: string, data: PetUpdate): Promise<boolean> {
+  const { error } = await supabase.from('pets').update(data).eq('id', id);
   return !error;
 }
 

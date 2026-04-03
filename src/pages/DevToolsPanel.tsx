@@ -23,7 +23,7 @@ type Section = 'usage' | 'jobs' | 'webhooks' | 'api' | 'logs' | 'errors' | 'data
 
 const SECTIONS: { key: Section; label: string; icon: typeof Activity; color: string }[] = [
   { key: 'usage', label: 'Uso do Sistema', icon: BarChart3, color: 'text-sky-500' },
-  { key: 'jobs', label: 'Fila de Tarefas', icon: Layers, color: 'text-violet-500' },
+  { key: 'jobs', label: 'Fila de Tarefas', icon: Layers, color: 'text-cyan-500' },
   { key: 'webhooks', label: 'Webhooks', icon: Webhook, color: 'text-emerald-500' },
   { key: 'api', label: 'Requisições API', icon: Globe, color: 'text-amber-500' },
   { key: 'logs', label: 'Logs do Backend', icon: ScrollText, color: 'text-rose-500' },
@@ -268,7 +268,7 @@ function JobsSection({ jobs, counts }: { jobs: JobItem[]; counts: { pending: num
   };
   return (
     <>
-      <SectionHeader icon={Layers} title="Fila de Tarefas" description="Estado das tarefas em processamento" color="from-violet-500 to-purple-600 shadow-violet-500/20" />
+      <SectionHeader icon={Layers} title="Fila de Tarefas" description="Estado das tarefas em processamento" color="from-cyan-500 to-teal-600 shadow-cyan-500/20" />
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <MiniStat label="Pendentes" value={counts.pending} color="text-muted-foreground" />
         <MiniStat label="Executando" value={counts.running} color="text-amber-500" />

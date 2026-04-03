@@ -1,4 +1,5 @@
-﻿import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
+import type { Json } from '@/integrations/supabase/types';
 
 export interface DashboardModuleConfig {
   enabled: boolean;
@@ -47,13 +48,15 @@ export const DEFAULT_PREFERENCES: DashboardPreferences = {
 
 export async function getDashboardPreferences(userId: string): Promise<DashboardPreferences> {
   const { data, error } = await supabase
-    .from('dashboard_preferences' as any)
+    .from('dashboard_preferences')
     .select('modules')
     .eq('user_id', userId)
     .maybeSingle();
+
   if (error || !data) return { ...DEFAULT_PREFERENCES };
+  
   try {
-    const modules = (data as any).modules as DashboardPreferences;
+    const modules = data.modules as unknown as DashboardPreferences;
     return { ...DEFAULT_PREFERENCES, ...modules };
   } catch {
     return { ...DEFAULT_PREFERENCES };
@@ -62,10 +65,10 @@ export async function getDashboardPreferences(userId: string): Promise<Dashboard
 
 export async function saveDashboardPreferences(userId: string, prefs: DashboardPreferences): Promise<boolean> {
   const { error } = await supabase
-    .from('dashboard_preferences' as any)
+    .from('dashboard_preferences')
     .upsert({
       user_id: userId,
-      modules: prefs as any,
-    } as any, { onConflict: 'user_id' });
+      modules: prefs as unknown as Json,
+    }, { onConflict: 'user_id' });
   return !error;
 }

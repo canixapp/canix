@@ -109,7 +109,7 @@ export default function PetProfile() {
     cancelado: 'border-destructive/40 text-destructive bg-destructive/5',
     confirmado: 'border-primary/40 text-primary bg-primary/5',
     pendente: 'border-amber-400/60 text-amber-700 dark:text-amber-400 bg-amber-500/5',
-    remarcado: 'border-violet-400/60 text-violet-700 dark:text-violet-400 bg-violet-500/5',
+    remarcado: 'border-cyan-400/60 text-cyan-700 dark:text-cyan-400 bg-cyan-500/5',
   };
 
   return (

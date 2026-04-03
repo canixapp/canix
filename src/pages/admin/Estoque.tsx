@@ -62,7 +62,7 @@ export default function Estoque() {
         await inventoryService.updateInventoryItem(editingItem.id, formData);
         toast({ title: 'Produto atualizado com sucesso.' });
       } else {
-        await inventoryService.createInventoryItem(formData as any);
+        await inventoryService.createInventoryItem(formData);
         toast({ title: 'Produto adicionado com sucesso.' });
       }
       setIsModalOpen(false);
@@ -125,8 +125,8 @@ export default function Estoque() {
       {/* HEADER TITLE & PRO BADGE */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-violet-500/10">
-            <ShoppingBag className="w-6 h-6 sm:w-7 sm:h-7 text-violet-500" />
+          <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-cyan-500/10">
+            <ShoppingBag className="w-6 h-6 sm:w-7 sm:h-7 text-cyan-500" />
           </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Estoque</h1>
@@ -142,7 +142,7 @@ export default function Estoque() {
       <div className="flex justify-end">
         <Button 
           onClick={() => openForm()} 
-          className="bg-violet-600 hover:bg-violet-700 text-white transition-all shadow-md"
+          className="bg-cyan-600 hover:bg-cyan-700 text-white transition-all shadow-md"
         >
           <Plus className="mr-2 h-4 w-4" /> Adicionar Produto
         </Button>
@@ -151,12 +151,12 @@ export default function Estoque() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
           <Card className="border-none shadow-md bg-white dark:bg-zinc-900 overflow-hidden relative group">
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <CardContent className="p-6">
               <div className="flex items-center justify-between space-y-0 pb-2">
                 <p className="text-sm font-medium text-muted-foreground">Total de Produtos</p>
-                <div className="p-2 bg-violet-100 dark:bg-violet-500/10 rounded-lg">
-                  <Package className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                <div className="p-2 bg-cyan-100 dark:bg-cyan-500/10 rounded-lg">
+                  <Package className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
                 </div>
               </div>
               <div className="text-3xl font-bold text-foreground">{metrics.totalItems}</div>
@@ -311,7 +311,7 @@ export default function Estoque() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-40">
                                 <DropdownMenuItem onClick={() => openForm(item)} className="cursor-pointer">
-                                  <Edit2 className="mr-2 h-4 w-4 text-violet-500" /> Editar
+                                  <Edit2 className="mr-2 h-4 w-4 text-cyan-500" /> Editar
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleDelete(item.id)} className="cursor-pointer text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/50 focus:bg-rose-50 dark:focus:bg-rose-950/50">
                                   <Trash2 className="mr-2 h-4 w-4" /> Excluir

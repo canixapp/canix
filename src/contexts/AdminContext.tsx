@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTestModes } from '@/contexts/TestModesContext';
@@ -23,7 +23,7 @@ interface AdminContextType {
   completeAppointment: (id: string) => Promise<void>;
   setPayment: (id: string, status: PaymentStatus, method?: PaymentMethod, amount?: number) => Promise<void>;
   createAppointment: (data: Parameters<typeof appointmentsService.createAppointment>[0]) => Promise<appointmentsService.AppointmentRow | null>;
-  addPreAgendamento: (data: any) => Promise<void>; // Alias for createAppointment for compatibility
+  addPreAgendamento: (data: Parameters<typeof appointmentsService.createAppointment>[0]) => Promise<void>; // Alias for createAppointment for compatibility
 
   // Gallery
   galleryImages: galleryService.GalleryPhotoRow[];
@@ -47,8 +47,8 @@ interface AdminContextType {
   servicesList: servicesService.ServiceRow[];
   servicesLoading: boolean;
   refreshServices: () => Promise<void>;
-  addService: (data: Omit<servicesService.ServiceRow, 'id' | 'petshop_id'>) => Promise<void>;
-  updateService: (id: string, data: Partial<servicesService.ServiceRow>) => Promise<void>;
+  addService: (data: Omit<servicesService.ServiceInsert, 'petshop_id'>) => Promise<void>;
+  updateService: (id: string, data: servicesService.ServiceUpdate) => Promise<void>;
   deleteService: (id: string) => Promise<void>;
 
   // Customer Packages
@@ -58,26 +58,26 @@ interface AdminContextType {
   refreshPackages: () => Promise<void>;
   createCustomerPackage: (data: Parameters<typeof packagesService.createCustomerPackage>[0]) => Promise<void>;
   toggleCustomerPackageStatus: (id: string) => Promise<void>;
-  updateCustomerPackage: (id: string, data: Partial<packagesService.CustomerPackageRow>) => Promise<void>;
+  updateCustomerPackage: (id: string, data: packagesService.CustomerPackageUpdate) => Promise<void>;
   
   // Aliases for compatibility
   adminPackages: packagesService.CustomerPackageRow[]; 
-  addAdminPackage: (data: any) => Promise<void>;
+  addAdminPackage: (data: Parameters<typeof packagesService.createCustomerPackage>[0]) => Promise<void>;
   toggleAdminPackageStatus: (id: string) => Promise<void>;
-  updateAdminPackage: (id: string, data: any) => Promise<void>;
+  updateAdminPackage: (id: string, data: packagesService.CustomerPackageUpdate) => Promise<void>;
 
   // Clients
   clientProfiles: profilesService.ProfileRow[];
   clientsLoading: boolean;
   refreshClients: () => Promise<void>;
   tutors: profilesService.ProfileRow[]; // Alias
-  getTutorByPhone: (phone: string) => any;
-  addTutor: (data: any) => Promise<void>;
-  addPetToTutor: (tutorId: string, pet: any) => Promise<void>;
+  getTutorByPhone: (phone: string) => profilesService.ProfileRow | undefined;
+  addTutor: (data: profilesService.ProfileInsert) => Promise<void>;
+  addPetToTutor: (tutorId: string, pet: petsService.PetInsert) => Promise<void>;
 
   // Admin Users
-  adminUsersList: any[]; // Placeholder
-  addAdminUser: (data: any) => Promise<void>;
+  adminUsersList: profilesService.ProfileRow[]; // Using ProfileRow as placeholder for admin users
+  addAdminUser: (data: profilesService.ProfileInsert) => Promise<void>;
   deleteAdminUser: (id: string) => Promise<void>;
 
   // Feature flags
@@ -300,7 +300,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     await reviewsService.updateReview(id, { moderation_status: 'aprovado' });
     const review = reviews.find(r => r.id === id);
     if (review?.user_id) {
-      createNotification({ user_id: review.user_id, title: 'AvaliaÃ§Ã£o aprovada! â­', description: 'Sua avaliaÃ§Ã£o foi aprovada e estÃ¡ visÃ­vel para todos.', type: 'avaliacao', link: '/#avaliacoes' }).catch(() => {});
+      createNotification({ user_id: review.user_id, title: 'AvaliaÃ§Ã£o aprovada! â­ ', description: 'Sua avaliaÃ§Ã£o foi aprovada e estÃ¡ visÃ­vel para todos.', type: 'avaliacao', link: '/#avaliacoes' }).catch(() => {});
     }
     await refreshReviews();
   }, [refreshReviews, reviews]);
@@ -325,12 +325,12 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }, [refreshReviews]);
 
   // Service actions
-  const addService = useCallback(async (data: Omit<servicesService.ServiceRow, 'id' | 'petshop_id'>) => {
+  const addService = useCallback(async (data: Omit<servicesService.ServiceInsert, 'petshop_id'>) => {
     await servicesService.createService(data);
     await refreshServices();
   }, [refreshServices]);
 
-  const handleUpdateService = useCallback(async (id: string, data: Partial<servicesService.ServiceRow>) => {
+  const handleUpdateService = useCallback(async (id: string, data: servicesService.ServiceUpdate) => {
     await servicesService.updateService(id, data);
     await refreshServices();
   }, [refreshServices]);
@@ -351,7 +351,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     await refreshPackages();
   }, [refreshPackages]);
 
-  const handleUpdateCustomerPackage = useCallback(async (id: string, data: Partial<packagesService.CustomerPackageRow>) => {
+  const handleUpdateCustomerPackage = useCallback(async (id: string, data: packagesService.CustomerPackageUpdate) => {
     await packagesService.updateCustomerPackage(id, data);
     await refreshPackages();
   }, [refreshPackages]);
@@ -367,7 +367,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       appointments, appointmentsLoading, refreshAppointments,
       confirmAppointment, rescheduleAppointment, cancelAdminAppointment, completeAppointment, setPayment,
       createAppointment: handleCreateAppointment,
-      addPreAgendamento: async (data: any) => { await handleCreateAppointment(data); }, // Alias
+      addPreAgendamento: async (data: Parameters<typeof appointmentsService.createAppointment>[0]) => { await handleCreateAppointment(data); }, // Alias
 
       galleryImages: gallery, galleryLoading, refreshGallery,
       approvePhoto, rejectPhoto, addPhoto, updatePhotoCategory,
@@ -385,7 +385,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       
       // Compatibility aliases
       adminPackages: customerPackages,
-      addAdminPackage: async (data: any) => { await handleCreateCustomerPackage(data); },
+      addAdminPackage: handleCreateCustomerPackage,
       toggleAdminPackageStatus: handleToggleCustomerPackageStatus,
       updateAdminPackage: handleUpdateCustomerPackage,
 

@@ -42,7 +42,7 @@ export function DevToolsOverview() {
     { label: 'Equipe ativa', value: stats.users, icon: Users, color: 'text-primary', bg: 'bg-primary/10', tip: 'Total de usuÃ¡rios admin/dev/mÃ­dia' },
     { label: 'Agendamentos hoje', value: stats.appointments, icon: CalendarCheck, color: 'text-emerald-500', bg: 'bg-emerald-500/10', tip: 'Agendamentos para a data de hoje' },
     { label: 'Uploads pendentes', value: stats.pendingPhotos, icon: Image, color: 'text-amber-500', bg: 'bg-amber-500/10', tip: 'Fotos aguardando moderaÃ§Ã£o' },
-    { label: 'VersÃ£o', value: 'v2.5.0', icon: Info, color: 'text-violet-500', bg: 'bg-violet-500/10', tip: 'VersÃ£o atual do sistema' },
+    { label: 'VersÃ£o', value: 'v2.5.0', icon: Info, color: 'text-cyan-500', bg: 'bg-cyan-500/10', tip: 'VersÃ£o atual do sistema' },
   ];
 
   const ACTION_LABELS: Record<string, string> = {

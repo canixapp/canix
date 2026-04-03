@@ -32,10 +32,10 @@ interface ProfileWithRole {
 const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string; icon: typeof Shield }> = {
   dev: { label: 'DEV', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10', icon: Crown },
   admin: { label: 'ADMIN', color: 'text-primary', bg: 'bg-primary/10', icon: Shield },
-  midia: { label: 'MÃDIA', color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-500/10', icon: Users },
+  midia: { label: 'MÍDIA', color: 'text-cyan-600 dark:text-cyan-400', bg: 'bg-cyan-500/10', icon: Users },
 };
 
-// â”€â”€â”€ User Card â”€â”€â”€
+// --- User Card ---
 const UserCard = memo(function UserCard({
   user,
   onEdit,
@@ -82,7 +82,7 @@ const UserCard = memo(function UserCard({
                         : 'bg-muted/40 text-muted-foreground border-border/60'
                     }`}
                   >
-                    {user.is_pro ? 'â­ PRO' : 'Comum'}
+                    {user.is_pro ? '⭐ PRO' : 'Comum'}
                   </Badge>
                 </div>
               </div>
@@ -107,7 +107,7 @@ const UserCard = memo(function UserCard({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="admin">ADMIN</SelectItem>
-                      <SelectItem value="midia">MÃDIA</SelectItem>
+                      <SelectItem value="midia">MÍDIA</SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -133,7 +133,7 @@ const UserCard = memo(function UserCard({
   );
 });
 
-// â”€â”€â”€ Main Component â”€â”€â”€
+// --- Main Component ---
 export function DevToolsUsuarios() {
   const { toast } = useToast();
   const [users, setUsers] = useState<ProfileWithRole[]>([]);
@@ -191,7 +191,7 @@ export function DevToolsUsuarios() {
 
   const handleCreate = async () => {
     if (!createForm.name || !createForm.email || !createForm.password) {
-      toast({ title: 'Preencha todos os campos obrigatÃ³rios', variant: 'destructive' });
+      toast({ title: 'Preencha todos os campos obrigatórios', variant: 'destructive' });
       return;
     }
     if (createForm.password.length < 6) {
@@ -216,7 +216,7 @@ export function DevToolsUsuarios() {
       return;
     }
 
-    toast({ title: 'UsuÃ¡rio criado com sucesso âœ“' });
+    toast({ title: 'Usuário criado com sucesso ✓' });
 
     if (createForm.is_pro) {
       setTimeout(async () => {
@@ -244,13 +244,13 @@ export function DevToolsUsuarios() {
     } else {
       await supabase.from('user_subscriptions').insert({ user_id: userId, is_pro: !currentPro } as any);
     }
-    toast({ title: !currentPro ? 'Plano PRO ativado â­' : 'Plano PRO desativado' });
+    toast({ title: !currentPro ? 'Plano PRO ativado ⭐' : 'Plano PRO desativado' });
     fetchUsers();
   };
 
   const updateUserRole = async (userId: string, newRole: AppRole) => {
     if (newRole === 'dev') {
-      toast({ title: 'NÃ£o Ã© permitido definir role como DEV', variant: 'destructive' });
+      toast({ title: 'Não é permitido definir role como DEV', variant: 'destructive' });
       return;
     }
     await supabase.from('user_roles').update({ role: newRole as any }).eq('user_id', userId);
@@ -260,14 +260,14 @@ export function DevToolsUsuarios() {
 
   const updateUserName = async (userId: string, name: string) => {
     await supabase.from('profiles').update({ name }).eq('user_id', userId);
-    toast({ title: 'Nome atualizado âœ“' });
+    toast({ title: 'Nome atualizado ✓' });
     fetchUsers();
   };
 
   const deleteUser = async (userId: string) => {
     await supabase.from('user_roles').delete().eq('user_id', userId);
     await supabase.from('profiles').delete().eq('user_id', userId);
-    toast({ title: 'UsuÃ¡rio removido' });
+    toast({ title: 'Usuário removido' });
     fetchUsers();
   };
   const handleResetPassword = async (userId: string) => {
@@ -325,7 +325,7 @@ export function DevToolsUsuarios() {
           <p className="text-xs text-muted-foreground">Gerencie contas administrativas do sistema</p>
         </div>
         <Button onClick={() => setShowCreateDialog(true)} className="gap-2 rounded-xl shadow-sm h-10">
-          <Plus className="w-4 h-4" /> Novo UsuÃ¡rio
+          <Plus className="w-4 h-4" /> Novo Usuário
         </Button>
       </div>
 
@@ -334,7 +334,7 @@ export function DevToolsUsuarios() {
         {[
           { label: 'Desenvolvedores', count: counts.dev, ...ROLE_CONFIG.dev },
           { label: 'Administradores', count: counts.admin, ...ROLE_CONFIG.admin },
-          { label: 'MÃ­dia Social', count: counts.midia, ...ROLE_CONFIG.midia },
+          { label: 'Mídia Social', count: counts.midia, ...ROLE_CONFIG.midia },
         ].map(s => {
           const Icon = s.icon;
           return (
@@ -356,7 +356,7 @@ export function DevToolsUsuarios() {
         <Card className="border-border/60">
           <CardContent className="p-12 text-center">
             <Users className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">Nenhum usuÃ¡rio administrativo encontrado.</p>
+            <p className="text-sm text-muted-foreground">Nenhum usuário administrativo encontrado.</p>
           </CardContent>
         </Card>
       ) : (
@@ -380,11 +380,11 @@ export function DevToolsUsuarios() {
         </motion.div>
       )}
 
-      {/* â”€â”€â”€ Create Dialog â”€â”€â”€ */}
+      {/* --- Create Dialog --- */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-lg">Criar Novo UsuÃ¡rio</DialogTitle>
+            <DialogTitle className="text-lg">Criar Novo Usuário</DialogTitle>
             <DialogDescription className="text-xs">Preencha os dados para criar uma conta administrativa.</DialogDescription>
           </DialogHeader>
           <div className="space-y-5 pt-2">
@@ -393,7 +393,7 @@ export function DevToolsUsuarios() {
               <Input
                 value={createForm.name}
                 onChange={e => setCreateForm(p => ({ ...p, name: e.target.value }))}
-                placeholder="Nome do usuÃ¡rio"
+                placeholder="Nome do usuário"
                 className="h-11 rounded-xl text-base"
               />
             </div>
@@ -416,7 +416,7 @@ export function DevToolsUsuarios() {
                 type="password"
                 value={createForm.password}
                 onChange={e => setCreateForm(p => ({ ...p, password: e.target.value }))}
-                placeholder="MÃ­nimo 6 caracteres"
+                placeholder="Mínimo 6 caracteres"
                 className="h-11 rounded-xl text-base"
               />
             </div>
@@ -458,7 +458,7 @@ export function DevToolsUsuarios() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground">Plano PRO</p>
-                  <p className="text-[11px] text-muted-foreground">Acesso a recursos avanÃ§ados</p>
+                  <p className="text-[11px] text-muted-foreground">Acesso a recursos avançados</p>
                 </div>
               </div>
               <Switch checked={createForm.is_pro} onCheckedChange={v => setCreateForm(p => ({ ...p, is_pro: v }))} />
@@ -467,18 +467,18 @@ export function DevToolsUsuarios() {
           <DialogFooter className="pt-2 gap-2">
             <Button variant="outline" onClick={() => setShowCreateDialog(false)} className="rounded-xl">Cancelar</Button>
             <Button onClick={handleCreate} disabled={creating} className="rounded-xl gap-2 min-w-[100px]">
-              {creating ? <><Loader2 className="w-4 h-4 animate-spin" /> Criando...</> : 'Criar UsuÃ¡rio'}
+              {creating ? <><Loader2 className="w-4 h-4 animate-spin" /> Criando...</> : 'Criar Usuário'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* â”€â”€â”€ Edit Dialog â”€â”€â”€ */}
+      {/* --- Edit Dialog --- */}
       {editUser && (
         <Dialog open={!!editUser} onOpenChange={() => setEditUser(null)}>
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
-              <DialogTitle>Editar UsuÃ¡rio</DialogTitle>
+              <DialogTitle>Editar Usuário</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-2">
               <div className="space-y-2">
@@ -498,13 +498,13 @@ export function DevToolsUsuarios() {
         </Dialog>
       )}
 
-      {/* â”€â”€â”€ View Account Dialog â”€â”€â”€ */}
+      {/* --- View Account Dialog --- */}
       {viewUser && (
         <Dialog open={!!viewUser} onOpenChange={() => { setViewUser(null); setTempPassword(null); }}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-lg">InformaÃ§Ãµes da Conta</DialogTitle>
-              <DialogDescription className="text-xs">Dados detalhados do usuÃ¡rio.</DialogDescription>
+              <DialogTitle className="text-lg">Informações da Conta</DialogTitle>
+              <DialogDescription className="text-xs">Dados detalhados do usuário.</DialogDescription>
             </DialogHeader>
             <div className="space-y-5 pt-2">
               {/* User header */}
@@ -519,7 +519,7 @@ export function DevToolsUsuarios() {
                       {ROLE_CONFIG[viewUser.role]?.label || viewUser.role}
                     </Badge>
                     <Badge variant="outline" className={`text-[10px] px-2 py-0 h-5 ${viewUser.is_pro ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' : ''}`}>
-                      {viewUser.is_pro ? 'â­ PRO' : 'Comum'}
+                      {viewUser.is_pro ? '⭐ PRO' : 'Comum'}
                     </Badge>
                   </div>
                 </div>
@@ -547,10 +547,10 @@ export function DevToolsUsuarios() {
               <div className="p-4 rounded-xl border-2 border-dashed border-border/50 space-y-3">
                 <div className="flex items-center gap-2">
                   <KeyRound className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm font-semibold text-foreground">RecuperaÃ§Ã£o de senha</span>
+                  <span className="text-sm font-semibold text-foreground">Recuperação de senha</span>
                 </div>
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  Gera uma senha temporÃ¡ria segura. O usuÃ¡rio serÃ¡ obrigado a criar uma nova senha no prÃ³ximo login.
+                  Gera uma senha temporária segura. O usuário será obrigado a criar uma nova senha no próximo login.
                 </p>
 
                 {tempPassword ? (
@@ -562,7 +562,7 @@ export function DevToolsUsuarios() {
                       </Button>
                     </div>
                     <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
-                      âš  Copie agora. Essa senha nÃ£o serÃ¡ exibida novamente.
+                      ⚠️ Copie agora. Essa senha não será exibida novamente.
                     </p>
                   </div>
                 ) : (
@@ -573,7 +573,7 @@ export function DevToolsUsuarios() {
                     onClick={() => handleResetPassword(viewUser.user_id)}
                     disabled={resetLoading}
                   >
-                    {resetLoading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Gerando...</> : <><KeyRound className="w-3.5 h-3.5" /> Gerar senha temporÃ¡ria</>}
+                    {resetLoading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Gerando...</> : <><KeyRound className="w-3.5 h-3.5" /> Gerar senha temporária</>}
                   </Button>
                 )}
               </div>

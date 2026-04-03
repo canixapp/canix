@@ -33,7 +33,7 @@ function getGreeting(): string {
 
 function getServiceColor(name: string): { dot: string; bg: string } {
   const lower = name.toLowerCase();
-  if (lower.includes('banho') && lower.includes('tosa')) return { dot: 'bg-violet-500', bg: 'bg-violet-500/10' };
+  if (lower.includes('banho') && lower.includes('tosa')) return { dot: 'bg-cyan-500', bg: 'bg-cyan-500/10' };
   if (lower.includes('banho')) return { dot: 'bg-sky-500', bg: 'bg-sky-500/10' };
   if (lower.includes('tosa')) return { dot: 'bg-emerald-500', bg: 'bg-emerald-500/10' };
   if (lower.includes('hidrata')) return { dot: 'bg-amber-500', bg: 'bg-amber-500/10' };
@@ -262,7 +262,7 @@ export default function Dashboard() {
           'Total de clientes cadastrados.', 0)}
 
         {renderCard('Pets', String(allPets.length),
-          <Dog className="w-5 h-5 text-violet-500" />, 'bg-violet-500/10',
+          <Dog className="w-5 h-5 text-cyan-500" />, 'bg-cyan-500/10',
           'Total de pets cadastrados.', 1)}
 
         {renderCard('Novos Clientes', String(clientMetrics.newMembers),
@@ -308,8 +308,8 @@ export default function Dashboard() {
         <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border/30">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-violet-500/10 shrink-0">
-                <CalendarPlus className="w-5 h-5 text-violet-500" />
+              <div className="p-2 rounded-xl bg-cyan-500/10 shrink-0">
+                <CalendarPlus className="w-5 h-5 text-cyan-500" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">Agenda de Amanhã</p>

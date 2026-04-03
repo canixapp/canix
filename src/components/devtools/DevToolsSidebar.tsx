@@ -18,7 +18,7 @@ interface Props {
 const NAV_ITEMS: { key: DevSection; label: string; icon: typeof LayoutDashboard; color: string }[] = [
   { key: 'overview', label: 'Visão Geral', icon: LayoutDashboard, color: 'text-sky-500' },
   { key: 'environment', label: 'Ambiente', icon: FlaskConical, color: 'text-emerald-500' },
-  { key: 'permissions', label: 'Permissões', icon: Shield, color: 'text-violet-500' },
+  { key: 'permissions', label: 'Permissões', icon: Shield, color: 'text-cyan-500' },
   { key: 'demo', label: 'Dados Demo', icon: Database, color: 'text-amber-500' },
   { key: 'logs', label: 'Logs', icon: ScrollText, color: 'text-rose-500' },
   { key: 'tools', label: 'Ferramentas', icon: Wrench, color: 'text-orange-500' },

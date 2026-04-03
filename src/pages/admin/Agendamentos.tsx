@@ -69,6 +69,7 @@ export default function Agendamentos() {
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('todos');
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('todos');
   const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>({});
+  const [searchTerm, setSearchTerm] = useState('');
 
   const [rescheduleModal, setRescheduleModal] = useState<{ open: boolean; id: string }>({ open: false, id: '' });
   const [rescheduleDate, setRescheduleDate] = useState<Date | undefined>();
@@ -293,7 +294,15 @@ export default function Agendamentos() {
   const filtered = appointments
     .filter(a => statusFilter === 'todos' || a.status === statusFilter)
     .filter(filterByPayment)
-    .filter(a => filterByPeriod(a.date));
+    .filter(a => filterByPeriod(a.date))
+    .filter(a => {
+      if (!searchTerm) return true;
+      const s = searchTerm.toLowerCase();
+      const petName = getPetName(a).toLowerCase();
+      const ownerName = (a.customer_name || '').toLowerCase();
+      const serviceName = (a.service_name || '').toLowerCase();
+      return petName.includes(s) || ownerName.includes(s) || serviceName.includes(s);
+    });
 
   const handleComplete = (id: string, price: number) => {
     completeAppointment(id);
@@ -431,378 +440,289 @@ export default function Agendamentos() {
 
   const todayFormatted = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
 
-  const statusTabs = [
-    { key: 'todos', label: 'Todos', count: appointments.length },
-    { key: 'pendente', label: 'Pendente', count: appointments.filter(a => a.status === 'pendente').length },
-    { key: 'confirmado', label: 'Confirmado', count: appointments.filter(a => a.status === 'confirmado').length },
-    { key: 'realizado', label: 'Concluído', count: appointments.filter(a => a.status === 'realizado').length },
-    { key: 'cancelado', label: 'Cancelado', count: appointments.filter(a => a.status === 'cancelado').length },
-    { key: 'remarcado', label: 'Remarcado', count: appointments.filter(a => a.status === 'remarcado').length },
-  ];
-
   const statusIconMap: Record<string, string> = {
-    pendente: 'â³',
-    confirmado: 'âœ“',
-    realizado: 'âœ”',
-    cancelado: 'âœ•',
-    remarcado: 'â†»',
+    pendente: '⏳',
+    confirmado: '✅',
+    realizado: '✔',
+    cancelado: '✖',
+    remarcado: '↻',
   };
+
+  const dayStats = useMemo(() => {
+    const today = appointments.filter(a => { try { return isToday(parseISO(a.date)); } catch { return false; } });
+    const pending = today.filter(a => a.status === 'pendente').length;
+    const completed = today.filter(a => a.status === 'realizado').length;
+    const revenue = today.filter(a => a.status === 'realizado').reduce((acc, a) => acc + (a.price || 0), 0);
+    return { total: today.length, pending, completed, revenue };
+  }, [appointments]);
 
   return (
     <TooltipProvider delayDuration={200}>
-    <div className="space-y-4 md:space-y-6">
-      {/* â•â•â• HEADER â•â•â• */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 md:gap-4">
-        <div className="space-y-0.5 md:space-y-1">
-          <h1 className="text-xl md:text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{getGreeting()} 👋</h1>
-          <p className="text-xs md:text-sm text-muted-foreground capitalize">{todayFormatted}</p>
-        </div>
-
-        {/* Mobile: stats inline + full-width CTA */}
-        <div className="flex flex-col gap-2.5 sm:hidden">
-          <div className="flex items-center gap-2">
-            <div className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl bg-primary/5 border border-primary/10">
+    <div className="space-y-8 animate-in fade-in duration-700">
+      {/* ─── BENTO HEADER ─── */}
+      <div className="space-y-6">
+        <div className="flex items-end justify-between px-1">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-3">
+              {getGreeting()} <span className="animate-bounce">👋</span>
+            </h1>
+            <p className="text-sm font-medium text-muted-foreground/80 flex items-center gap-2">
               <CalendarIcon className="w-4 h-4 text-primary" />
-              <span className="text-xs font-medium text-muted-foreground">Hoje</span>
-              <span className="ml-auto text-base font-bold text-foreground">{todayCount}</span>
-            </div>
-            {pendingCount > 0 && (
-              <div className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl bg-amber-500/5 border border-amber-500/15">
-                <Clock className="w-4 h-4 text-amber-600" />
-                <span className="text-xs font-medium text-muted-foreground">Pendentes</span>
-                <span className="ml-auto text-base font-bold text-amber-600">{pendingCount}</span>
-              </div>
-            )}
+              <span className="capitalize">{todayFormatted}</span>
+            </p>
           </div>
           <Button
             onClick={() => setNewAptModal(true)}
-            className="w-full h-12 text-sm font-semibold rounded-xl shadow-md shadow-primary/15"
+            className="hidden sm:flex h-12 px-6 bg-primary hover:bg-primary-dark text-white rounded-2xl shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-300 gap-2 font-semibold"
           >
-            <Plus className="w-5 h-5 mr-2" /> Novo Agendamento
+            <Plus className="w-5 h-5" /> Novo Agendamento
           </Button>
         </div>
 
-        {/* Desktop: original layout */}
-        <div className="hidden sm:flex items-center gap-3">
-          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-primary/5 border border-primary/10">
-            <CalendarIcon className="w-4 h-4 text-primary" />
-            <div className="text-right">
-              <p className="text-[11px] font-medium text-muted-foreground leading-none">Hoje</p>
-              <p className="text-lg font-bold text-foreground leading-tight">{todayCount}</p>
+        {/* Bento Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-5 rounded-[2rem] bg-white border border-border/40 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+            <div className="absolute -right-2 -bottom-2 opacity-[0.03] group-hover:scale-110 transition-transform duration-500">
+              <CalendarIcon size={120} />
             </div>
-          </div>
-          {pendingCount > 0 && (
-            <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-amber-500/5 border border-amber-500/15">
-              <Clock className="w-4 h-4 text-amber-600" />
-              <div className="text-right">
-                <p className="text-[11px] font-medium text-muted-foreground leading-none">Pendentes</p>
-                <p className="text-lg font-bold text-amber-600 leading-tight">{pendingCount}</p>
-              </div>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Total Hoje</p>
+            <h3 className="text-4xl font-black text-foreground tabular-nums">{dayStats.total}</h3>
+            <div className="mt-2 flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              <span className="text-[10px] font-semibold text-primary">Agendamentos</span>
             </div>
-          )}
-          <Button
-            onClick={() => setNewAptModal(true)}
-            className="h-11 px-5 text-sm font-semibold rounded-xl shadow-md shadow-primary/15 hover:shadow-lg hover:shadow-primary/20 transition-all duration-200"
-          >
-            <Plus className="w-4.5 h-4.5 mr-2" /> Novo Agendamento
-          </Button>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-5 rounded-[2rem] bg-amber-50/30 border border-amber-200/40 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+             <div className="absolute -right-2 -bottom-2 opacity-[0.05] group-hover:scale-110 transition-transform duration-500 text-amber-500">
+              <Clock size={120} />
+            </div>
+            <p className="text-xs font-bold text-amber-600/80 uppercase tracking-widest mb-3">Pendentes</p>
+            <h3 className="text-4xl font-black text-amber-600 tabular-nums">{dayStats.pending}</h3>
+            <p className="text-[10px] font-semibold text-amber-600/60 mt-2 italic">Aguardando confirmação</p>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="p-5 rounded-[2rem] bg-emerald-50/30 border border-emerald-200/40 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+             <div className="absolute -right-2 -bottom-2 opacity-[0.05] group-hover:scale-110 transition-transform duration-500 text-emerald-500">
+              <CheckCircle2 size={120} />
+            </div>
+            <p className="text-xs font-bold text-emerald-600/80 uppercase tracking-widest mb-3">Concluídos</p>
+            <h3 className="text-4xl font-black text-emerald-600 tabular-nums">{dayStats.completed}</h3>
+            <p className="text-[10px] font-semibold text-emerald-600/60 mt-2 italic">Hoje</p>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="p-5 rounded-[2rem] bg-indigo-50/30 border border-indigo-200/40 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+             <div className="absolute -right-2 -bottom-2 opacity-[0.05] group-hover:scale-110 transition-transform duration-500 text-indigo-500">
+              <DollarSign size={120} />
+            </div>
+            <p className="text-xs font-bold text-indigo-600/80 uppercase tracking-widest mb-3">Faturamento</p>
+            <h3 className="text-3xl font-black text-indigo-600 tabular-nums">R$ {dayStats.revenue}</h3>
+            <p className="text-[10px] font-semibold text-indigo-600/60 mt-3 italic">Serviços realizados hoje</p>
+          </motion.div>
         </div>
       </div>
 
-      {/* â•â•â• SEGMENTED FILTER TABS â•â•â• */}
-      <div className="space-y-4 md:space-y-4">
-        {/* Filter bar container â€” fixed height wrapper to prevent layout shift */}
-        <div className="space-y-0">
-          {/* Hint line â€” always in DOM, fixed 18px height, opacity-only animation */}
-          <div
-            className="h-[18px] flex items-center gap-1 pl-1 md:hidden transition-opacity duration-300 ease-out"
-            style={{ opacity: showRightFade ? 0.5 : 0 }}
-          >
-            <span className="text-[10px] text-muted-foreground">Arraste para ver mais</span>
-            <ChevronRight className="w-3 h-3 text-muted-foreground animate-[pulse_1.5s_ease-in-out_infinite]" />
-          </div>
+      <Button
+        onClick={() => setNewAptModal(true)}
+        className="sm:hidden w-full h-14 bg-primary text-white rounded-2xl shadow-lg font-bold text-base"
+      >
+        <Plus className="w-5 h-5 mr-2" /> Novo Agendamento
+      </Button>
 
-          {/* Scrollable filter bar with edge fades */}
-          <div className="relative">
-            {/* Left fade */}
-            <div
-              className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none rounded-l-xl md:hidden transition-opacity duration-250"
-              style={{ opacity: showLeftFade ? 1 : 0 }}
+      {/* ─── INTEGRATED BENTO FILTER ─── */}
+      <div className="p-3 md:p-6 rounded-[2.5rem] bg-white border border-border/40 shadow-sm space-y-6">
+        <div className="flex flex-col md:flex-row gap-4 justify-between">
+          <div className="flex-1 relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            <Input
+              placeholder="Pesquisar por pet, dono ou serviço..."
+              className="pl-11 h-12 bg-surface-2 border-none rounded-2xl focus-visible:ring-2 focus-visible:ring-primary/20"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
-            {/* Right fade + arrow */}
-            <div
-              className="absolute right-0 top-0 bottom-0 w-10 z-10 pointer-events-none md:hidden flex items-center justify-end pr-1 transition-opacity duration-250"
-              style={{ opacity: showRightFade ? 1 : 0 }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-l from-background to-transparent rounded-r-xl" />
-              <ChevronRight className="relative w-4 h-4 text-muted-foreground/40" />
-            </div>
+          </div>
 
-            <div
-              ref={filterScrollRef}
-              className="flex gap-1.5 md:gap-1 p-1 pr-4 rounded-xl bg-muted/50 border border-border/50 overflow-x-auto"
-              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch', scrollBehavior: 'smooth' } as React.CSSProperties}
-            >
-              {statusTabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setStatusFilter(tab.key)}
-                  className={`relative flex items-center gap-1 md:gap-1.5 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium whitespace-nowrap transition-all duration-200 shrink-0 ${
-                    statusFilter === tab.key
-                      ? 'bg-background text-foreground shadow-sm ring-1 ring-border/50'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
-                  }`}
-                >
-                  {tab.label}
-                  {tab.count > 0 && (
-                    <span className={`inline-flex items-center justify-center min-w-[18px] md:min-w-[20px] h-[18px] md:h-5 px-1 md:px-1.5 rounded-full text-[10px] md:text-[11px] font-semibold ${
-                      statusFilter === tab.key
-                        ? tab.key === 'pendente' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' : 'bg-primary/10 text-primary'
-                        : 'bg-muted-foreground/10 text-muted-foreground'
-                    }`}>
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
+          <div className="flex gap-2">
+             <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as PaymentFilter)}>
+                <SelectTrigger className="w-[180px] h-12 rounded-2xl border-none bg-surface-2 font-medium">
+                  <DollarSign className="w-4 h-4 mr-2 text-emerald-600" />
+                  <SelectValue placeholder="Pagamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos Pagamentos</SelectItem>
+                  <SelectItem value="pago">Já Pagos</SelectItem>
+                  <SelectItem value="pendente">Pagamento Pendente</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={periodFilter} onValueChange={(v) => setPeriodFilter(v as PeriodFilter)}>
+                <SelectTrigger className="w-[180px] h-12 rounded-2xl border-none bg-surface-2 font-medium">
+                  <CalendarIcon className="w-4 h-4 mr-2 text-primary" />
+                  <SelectValue placeholder="Período" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todo período</SelectItem>
+                  <SelectItem value="hoje">Hoje</SelectItem>
+                  <SelectItem value="amanha">Amanhã</SelectItem>
+                  <SelectItem value="7dias">Próximos 7 dias</SelectItem>
+                  <SelectItem value="30dias">Próximos 30 dias</SelectItem>
+                  <SelectItem value="personalizado">Personalizado...</SelectItem>
+                </SelectContent>
+              </Select>
           </div>
         </div>
 
-        {/* Secondary Filters â€” modern mini-card style */}
-        <div className="grid grid-cols-2 gap-2.5 md:flex md:gap-3 md:flex-wrap md:items-end">
-          <div className="md:w-44">
-            <label className="text-[10px] font-medium text-muted-foreground mb-1 block md:hidden">Pagamento</label>
-            <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as PaymentFilter)}>
-              <SelectTrigger className="h-11 md:h-9 text-xs rounded-xl border-border/50 bg-card shadow-sm shadow-black/[0.03] hover:shadow-md hover:border-border transition-all duration-200">
-                <DollarSign className="w-3.5 h-3.5 mr-1.5 text-primary/60" />
-                <SelectValue placeholder="Pagamento" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos ({appointments.length})</SelectItem>
-                <SelectItem value="pago">Pagos ({appointments.filter(a => a.status === 'realizado' && a.payment_status === 'pago').length})</SelectItem>
-                <SelectItem value="pendente">Pgto Pendente ({appointments.filter(a => a.status === 'realizado' && a.payment_status === 'pendente').length})</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Status Pills with Staggered Animation */}
+        <div className="flex flex-wrap gap-2">
+          {['todos', 'pendente', 'confirmado', 'realizado', 'cancelado', 'remarcado'].map((key) => {
+            const count = key === 'todos' ? appointments.length : appointments.filter(a => a.status === key).length;
+            const label = key === 'realizado' ? 'Concluído' : key.charAt(0).toUpperCase() + key.slice(1);
+            const isActive = statusFilter === key;
 
-          <div className="md:w-48">
-            <label className="text-[10px] font-medium text-muted-foreground mb-1 block md:hidden">Período</label>
-            <Select value={periodFilter} onValueChange={(v) => setPeriodFilter(v as PeriodFilter)}>
-              <SelectTrigger className="h-11 md:h-9 text-xs rounded-xl border-border/50 bg-card shadow-sm shadow-black/[0.03] hover:shadow-md hover:border-border transition-all duration-200">
-                <CalendarIcon className="w-3.5 h-3.5 mr-1.5 text-primary/60" />
-                <SelectValue placeholder="Período" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="hoje">Hoje</SelectItem>
-                <SelectItem value="amanha">Amanhã</SelectItem>
-                <SelectItem value="7dias">Próximos 7 dias</SelectItem>
-                <SelectItem value="30dias">Próximos 30 dias</SelectItem>
-                <SelectItem value="personalizado">Personalizado</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {periodFilter === 'personalizado' && (
-            <div className="col-span-2 flex gap-2 items-end md:col-span-1">
-              <div className="flex-1">
-                <label className="text-[10px] text-muted-foreground">De</label>
-                <input type="date" className="block w-full border border-border/50 rounded-xl px-3 py-2 text-xs bg-card shadow-sm h-11 md:h-9" onChange={e => setCustomRange(prev => ({ ...prev, from: e.target.value ? new Date(e.target.value) : undefined }))} />
-              </div>
-              <div className="flex-1">
-                <label className="text-[10px] text-muted-foreground">Até</label>
-                <input type="date" className="block w-full border border-border/50 rounded-xl px-3 py-2 text-xs bg-card shadow-sm h-11 md:h-9" onChange={e => setCustomRange(prev => ({ ...prev, to: e.target.value ? new Date(e.target.value) : undefined }))} />
-              </div>
-            </div>
-          )}
+            return (
+              <button
+                key={key}
+                onClick={() => setStatusFilter(key)}
+                className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-300 flex items-center gap-2 ${
+                  isActive
+                    ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-105'
+                    : 'bg-surface-2 text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`}
+              >
+                {label}
+                <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${isActive ? 'bg-white/20' : 'bg-background/80'}`}>{count}</span>
+              </button>
+            );
+          })}
         </div>
+
+        {periodFilter === 'personalizado' && (
+           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="flex gap-4 p-4 rounded-2xl bg-surface-2">
+              <div className="flex-1 space-y-1.5">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase pl-1">Início</label>
+                <Input type="date" className="bg-white border-none rounded-xl h-11" onChange={e => setCustomRange(prev => ({ ...prev, from: e.target.value ? new Date(e.target.value) : undefined }))} />
+              </div>
+              <div className="flex-1 space-y-1.5">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase pl-1">Fim</label>
+                <Input type="date" className="bg-white border-none rounded-xl h-11" onChange={e => setCustomRange(prev => ({ ...prev, to: e.target.value ? new Date(e.target.value) : undefined }))} />
+              </div>
+           </motion.div>
+        )}
       </div>
 
-      {/* â•â•â• APPOINTMENTS LIST â•â•â• */}
-      <div className="space-y-3 md:space-y-3">
+      {/* ─── PREMIUM APPOINTMENT LIST ─── */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <AnimatePresence mode="popLayout">
           {filtered.map((apt, i) => {
             const cfg = statusConfig[apt.status] || { label: apt.status, color: '' };
             const petName = getPetName(apt);
             const petSize = getPetSize(apt);
             const petBreed = getPetBreed(apt);
-            const icon = statusIconMap[apt.status] || '';
 
-            const statusAccent =
-              apt.status === 'pendente' ? 'bg-amber-400' :
-              apt.status === 'confirmado' ? 'bg-blue-500' :
-              apt.status === 'realizado' ? 'bg-emerald-500' :
-              apt.status === 'cancelado' ? 'bg-red-400' :
-              apt.status === 'remarcado' ? 'bg-cyan-500' : 'bg-muted';
+            const statusTheme =
+              apt.status === 'pendente' ? { bg: 'bg-amber-100/50', border: 'border-amber-200/50', text: 'text-amber-700', dot: 'bg-amber-500' } :
+              apt.status === 'confirmado' ? { bg: 'bg-blue-100/50', border: 'border-blue-200/50', text: 'text-blue-700', dot: 'bg-blue-500' } :
+              apt.status === 'realizado' ? { bg: 'bg-emerald-100/50', border: 'border-emerald-200/50', text: 'text-emerald-700', dot: 'bg-emerald-500' } :
+              apt.status === 'cancelado' ? { bg: 'bg-red-100/50', border: 'border-red-200/50', text: 'text-red-700', dot: 'bg-red-500' } :
+              { bg: 'bg-cyan-100/50', border: 'border-cyan-200/50', text: 'text-cyan-700', dot: 'bg-cyan-500' };
 
-            const avatarBg =
-              apt.status === 'pendente' ? 'bg-amber-100 dark:bg-amber-900/30' :
-              apt.status === 'confirmado' ? 'bg-blue-100 dark:bg-blue-900/30' :
-              apt.status === 'realizado' ? 'bg-emerald-100 dark:bg-emerald-900/30' :
-              apt.status === 'cancelado' ? 'bg-red-100 dark:bg-red-900/30' :
-              apt.status === 'remarcado' ? 'bg-cyan-100 dark:bg-cyan-900/30' : 'bg-muted';
-
-            const avatarText =
-              apt.status === 'pendente' ? 'text-amber-600 dark:text-amber-400' :
-              apt.status === 'confirmado' ? 'text-blue-600 dark:text-blue-400' :
-              apt.status === 'realizado' ? 'text-emerald-600 dark:text-emerald-400' :
-              apt.status === 'cancelado' ? 'text-red-500 dark:text-red-400' :
-              apt.status === 'remarcado' ? 'text-cyan-600 dark:text-cyan-400' : 'text-muted-foreground';
-
-            // Build action buttons array for this appointment
             const actionButtons: React.ReactNode[] = [];
 
             if (showWhatsApp(apt.status)) {
               actionButtons.push(
-                <Tooltip key="wa">
-                  <TooltipTrigger asChild>
-                    <Button size="icon" variant="ghost" onClick={() => openWhatsApp(apt)} className="h-9 w-9 md:h-8 md:w-8 rounded-full md:rounded-lg text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-900/20">
-                      <MessageCircle className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom"><p>WhatsApp</p></TooltipContent>
-                </Tooltip>
+                <Button key="wa" size="sm" variant="ghost" onClick={() => openWhatsApp(apt)} className="h-10 w-10 p-0 rounded-2xl text-emerald-600 hover:bg-emerald-50">
+                  <MessageCircle className="w-5 h-5" />
+                </Button>
               );
             }
             if (apt.status === 'pendente' || apt.status === 'remarcado') {
               actionButtons.push(
-                <Tooltip key="confirm">
-                  <TooltipTrigger asChild>
-                    <Button size="icon" variant="ghost" onClick={() => handleAdminConfirm(apt)} className="h-9 w-9 md:h-8 md:w-8 rounded-full md:rounded-lg text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/20">
-                      <CheckCircle2 className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom"><p>Confirmar</p></TooltipContent>
-                </Tooltip>
-              );
-            }
-            if (apt.status === 'pendente' || apt.status === 'confirmado') {
-              actionButtons.push(
-                <Tooltip key="reschedule">
-                  <TooltipTrigger asChild>
-                    <Button size="icon" variant="ghost" onClick={() => setRescheduleModal({ open: true, id: apt.id })} className="h-9 w-9 md:h-8 md:w-8 rounded-full md:rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground">
-                      <RefreshCw className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom"><p>Remarcar</p></TooltipContent>
-                </Tooltip>
-              );
-            }
-            if (apt.status === 'pendente' || apt.status === 'confirmado' || apt.status === 'remarcado') {
-              actionButtons.push(
-                <Tooltip key="cancel">
-                  <TooltipTrigger asChild>
-                    <Button size="icon" variant="ghost" onClick={() => setCancelModal({ open: true, id: apt.id })} className="h-9 w-9 md:h-8 md:w-8 rounded-full md:rounded-lg text-destructive hover:bg-destructive/10">
-                      <XCircle className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom"><p>Cancelar</p></TooltipContent>
-                </Tooltip>
+                <Button key="confirm" size="sm" variant="ghost" onClick={() => handleAdminConfirm(apt)} className="h-10 w-10 p-0 rounded-2xl text-blue-600 hover:bg-blue-50">
+                  <CheckCircle2 className="w-5 h-5" />
+                </Button>
               );
             }
             if (apt.status === 'confirmado') {
               actionButtons.push(
-                <Tooltip key="complete">
-                  <TooltipTrigger asChild>
-                    <Button size="icon" variant="ghost" onClick={() => handleComplete(apt.id, apt.price || 0)} className="h-9 w-9 md:h-8 md:w-8 rounded-full md:rounded-lg text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-900/20">
-                      <CheckCircle2 className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom"><p>Concluir</p></TooltipContent>
-                </Tooltip>
+                 <Button key="complete" size="sm" variant="ghost" onClick={() => handleComplete(apt.id, apt.price || 0)} className="h-10 w-10 p-0 rounded-2xl text-emerald-600 hover:bg-emerald-50">
+                  <CheckCircle2 className="w-5 h-5" />
+                </Button>
               );
             }
+            actionButtons.push(
+               <Button key="reschedule" size="sm" variant="ghost" onClick={() => setRescheduleModal({ open: true, id: apt.id })} className="h-10 w-10 p-0 rounded-2xl text-muted-foreground hover:bg-surface-2">
+                <RefreshCw className="w-5 h-5" />
+              </Button>
+            );
 
             return (
               <motion.div
                 key={apt.id}
                 layout
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.96 }}
-                transition={{ duration: 0.2, delay: i * 0.02 }}
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.4, delay: i * 0.05, ease: "easeOut" }}
+                className="group relative p-5 md:p-6 rounded-[2.5rem] bg-white border border-border/40 shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-300"
               >
-                <div className="group relative rounded-2xl border border-border/60 bg-card hover:bg-accent/30 hover:border-border hover:shadow-md transition-all duration-200 overflow-hidden">
-                  {/* Status accent bar */}
-                  <div className={`absolute left-0 top-0 bottom-0 w-1 ${statusAccent}`} />
+                {/* Status indicator pill */}
+                <div className={`absolute top-6 right-6 flex items-center gap-2 px-3 py-1.5 rounded-full ${statusTheme.bg} border ${statusTheme.border}`}>
+                  <div className={`w-2 h-2 rounded-full ${statusTheme.dot} ${apt.status === 'pendente' ? 'animate-pulse' : ''}`} />
+                  <span className={`text-[10px] font-black uppercase tracking-wider ${statusTheme.text}`}>{cfg.label}</span>
+                </div>
 
-                  <div className="pl-5 pr-4 py-4 md:py-4">
-                    {/* â”€â”€ DESKTOP layout (unchanged) â”€â”€ */}
-                    <div className="hidden md:flex md:items-center gap-4">
-                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${avatarBg}`}>
-                        <Dog className={`w-5 h-5 ${avatarText}`} />
-                      </div>
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-sm text-foreground">{petName || 'Pet'}</span>
-                          <span className="text-muted-foreground text-xs">â€¢</span>
-                          <span className="text-sm text-muted-foreground truncate">{apt.customer_name}</span>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1"><CalendarIcon className="w-3 h-3" />{apt.date}</span>
-                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{apt.time}</span>
-                          <span className="font-medium text-foreground/70">{apt.service_name}</span>
-                          {apt.price != null && apt.price > 0 && <span className="font-medium">R$ {apt.price}</span>}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <Badge variant="outline" className={`text-[11px] border rounded-lg px-2.5 py-0.5 font-semibold ${cfg.color}`}>{cfg.label}</Badge>
-                        {apt.origin === 'pacote' && <Badge variant="outline" className="text-[11px] bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-700 rounded-lg">Pacote</Badge>}
-                        {apt.status === 'realizado' && apt.payment_status === 'pago' && <Badge variant="outline" className="text-[11px] bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700 rounded-lg">Pago</Badge>}
-                        {apt.status === 'realizado' && apt.payment_status === 'pendente' && <Badge variant="outline" className="text-[11px] bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700 rounded-lg">Pgto Pendente</Badge>}
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">{actionButtons}</div>
+                <div className="flex flex-col sm:flex-row gap-6">
+                  {/* Photo/Avatar Block */}
+                  <div className="relative shrink-0">
+                    <div className="w-24 h-24 rounded-[2rem] bg-surface-2 flex items-center justify-center border-4 border-white shadow-inner overflow-hidden group-hover:scale-105 transition-transform duration-500">
+                      <Dog className={`w-10 h-10 ${statusTheme.text} opacity-40`} />
+                       {/* Overlay with size info */}
+                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <span className="text-[10px] font-black text-white uppercase">{petSize || 'Porte?'}</span>
+                       </div>
+                    </div>
+                  </div>
+
+                  {/* Info Content */}
+                  <div className="flex-1 space-y-4">
+                    <div className="space-y-1">
+                      <h4 className="text-2xl font-black text-foreground tracking-tight">{petName || 'Pet'}</h4>
+                      <p className="font-bold text-muted-foreground flex items-center gap-1.5">
+                        <User size={14} className="text-foreground/40" />
+                        {apt.customer_name}
+                      </p>
                     </div>
 
-                    {/* â”€â”€ MOBILE layout â”€â”€ */}
-                    <div className="flex flex-col gap-3 md:hidden">
-                      {/* Row 1: Avatar + Pet/Client */}
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${avatarBg}`}>
-                          <Dog className={`w-5 h-5 ${avatarText}`} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm text-foreground truncate">{petName || 'Pet'}</p>
-                          <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                            <User className="w-3 h-3 shrink-0" />
-                            {apt.customer_name}
-                          </p>
-                        </div>
-                      </div>
+                    <div className="flex flex-wrap gap-4 items-center pt-2">
+                       <div className="flex flex-col">
+                          <span className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest pl-0.5">Horário</span>
+                          <div className="flex items-center gap-1.5 font-bold text-foreground bg-surface-2 px-3 py-1 rounded-xl">
+                            <Clock size={14} className="text-primary" />
+                            {apt.time}
+                          </div>
+                       </div>
+                       <div className="flex flex-col">
+                          <span className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest pl-0.5">Data</span>
+                          <div className="flex items-center gap-1.5 font-bold text-foreground bg-surface-2 px-3 py-1 rounded-xl">
+                            <CalendarIcon size={14} className="text-primary" />
+                            {apt.date}
+                          </div>
+                       </div>
+                       <div className="flex flex-col">
+                          <span className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest pl-0.5">Investimento</span>
+                          <div className="flex items-center gap-1.5 font-black text-primary bg-primary/10 px-3 py-1 rounded-xl">
+                            R$ {apt.price || 0}
+                          </div>
+                       </div>
+                    </div>
 
-                      {/* Row 2: Date & Time */}
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground pl-[52px]">
-                        <span className="flex items-center gap-1">
-                          <CalendarIcon className="w-3.5 h-3.5" />
-                          {apt.date}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5" />
-                          {apt.time}
-                        </span>
-                      </div>
-
-                      {/* Row 3: Service */}
-                      <p className="text-xs font-medium text-foreground/70 pl-[52px]">{apt.service_name}</p>
-
-                      {/* Row 4: Status + Price + Badges */}
-                      <div className="flex items-center gap-2 flex-wrap pl-[52px]">
-                        <Badge variant="outline" className={`text-[11px] border rounded-lg px-2.5 py-0.5 font-semibold ${cfg.color}`}>{cfg.label}</Badge>
-                        {apt.price != null && apt.price > 0 && (
-                          <span className="text-xs font-semibold text-foreground">R$ {apt.price}</span>
-                        )}
-                        {apt.origin === 'pacote' && <Badge variant="outline" className="text-[10px] bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-700 rounded-lg px-2 py-0.5">Pacote</Badge>}
-                        {apt.status === 'realizado' && apt.payment_status === 'pago' && <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700 rounded-lg px-2 py-0.5">Pago</Badge>}
-                        {apt.status === 'realizado' && apt.payment_status === 'pendente' && <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700 rounded-lg px-2 py-0.5">Pgto Pendente</Badge>}
-                      </div>
-
-                      {/* Row 5: Actions â€” centered row of circular buttons */}
-                      {actionButtons.length > 0 && (
-                        <div className="flex items-center justify-center gap-2 pt-1 border-t border-border/40">
+                    <div className="pt-2 flex items-center justify-between">
+                       <span className="px-4 py-2 rounded-xl bg-surface-2 text-xs font-bold text-muted-foreground border border-border/20">
+                          {apt.service_name}
+                       </span>
+                       <div className="flex items-center gap-2">
                           {actionButtons}
-                        </div>
-                      )}
+                       </div>
                     </div>
                   </div>
                 </div>
@@ -811,20 +731,20 @@ export default function Agendamentos() {
           })}
         </AnimatePresence>
 
-        {/* â•â•â• EMPTY STATE â•â•â• */}
+        {/* ─── BENTO EMPTY STATE ─── */}
         {filtered.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center py-20"
+            className="col-span-full py-20 rounded-[3rem] bg-white border border-dashed border-muted-foreground/30 flex flex-col items-center justify-center text-center px-6"
           >
-            <div className="w-16 h-16 rounded-2xl bg-muted/60 flex items-center justify-center mx-auto mb-4">
-              <CalendarIcon className="w-8 h-8 text-muted-foreground/50" />
+            <div className="w-20 h-20 rounded-[2rem] bg-surface-2 flex items-center justify-center mb-6">
+              <CalendarIcon className="w-10 h-10 text-muted-foreground/40" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-1">Nenhum agendamento encontrado</h3>
-            <p className="text-sm text-muted-foreground mb-6">Não há agendamentos para este período ou filtro.</p>
-            <Button onClick={() => setNewAptModal(true)} variant="outline" className="rounded-xl">
-              <Plus className="w-4 h-4 mr-2" /> Adicionar primeiro agendamento
+            <h3 className="text-2xl font-black text-foreground tracking-tight mb-2">Nenhum agendamento encontrado</h3>
+            <p className="text-sm font-medium text-muted-foreground max-w-xs mb-8">Não há agendamentos para este período ou filtro. Que tal criar um novo?</p>
+            <Button onClick={() => setNewAptModal(true)} className="h-12 px-8 rounded-2xl bg-primary shadow-lg shadow-primary/20 font-bold">
+              <Plus className="w-5 h-5 mr-2" /> Adicionar Primeiro
             </Button>
           </motion.div>
         )}
@@ -832,7 +752,7 @@ export default function Agendamentos() {
 
       {/* â•â•â• RESCHEDULE MODAL â•â•â• */}
       <Dialog open={rescheduleModal.open} onOpenChange={(open) => setRescheduleModal({ ...rescheduleModal, open })}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md rounded-[2.5rem] border-none shadow-2xl p-8">
           <DialogHeader><DialogTitle>Remarcar Agendamento</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="flex justify-center">
@@ -872,7 +792,7 @@ export default function Agendamentos() {
 
       {/* â•â•â• NEW APPOINTMENT MODAL â•â•â• */}
       <Dialog open={newAptModal} onOpenChange={(open) => { setNewAptModal(open); if (!open) resetModal(); }}>
-        <DialogContent className="max-w-[520px] p-0 gap-0 rounded-t-[20px] md:rounded-[20px] max-h-[92vh] md:max-h-[85vh] flex flex-col overflow-hidden border-border/30 shadow-xl shadow-black/10">
+        <DialogContent className="max-w-[560px] p-0 gap-0 rounded-t-[3rem] md:rounded-[3rem] max-h-[92vh] md:max-h-[85vh] flex flex-col overflow-hidden border-none shadow-2xl">
           {/* Bottom-sheet handle (mobile) */}
           <div className="flex justify-center pt-3 pb-1 md:hidden">
             <div className="w-9 h-[5px] rounded-full bg-muted-foreground/20" />

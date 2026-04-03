@@ -128,7 +128,40 @@ export default function Agendamentos() {
     '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
     '11:00', '11:30', '13:00', '13:30', '14:00', '14:30',
     '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
+    '18:00', '18:30',
   ];
+
+  // Automated price update based on service and pet size
+  useEffect(() => {
+    if (!modalService || !servicesList || !newAptModal) return;
+
+    const svc = servicesList.find(s => s.name === modalService);
+    if (!svc) return;
+
+    let petSize = '';
+    if (foundTutor) {
+      if (isAddingNewPet) {
+        petSize = newPets[0]?.size || '';
+      } else {
+        const pet = foundTutor.pets.find(p => p.id === selectedPetId);
+        petSize = pet?.size || '';
+      }
+    } else {
+      petSize = newPets[0]?.size || '';
+    }
+
+    if (petSize) {
+      const s = petSize.toLowerCase();
+      let price = 0;
+      if (s.includes('peq')) price = svc.price_pequeno || 0;
+      else if (s.includes('gran')) price = svc.price_grande || 0;
+      else if (s.includes('méd') || s.includes('med')) price = svc.price_medio || 0;
+
+      if (price > 0) {
+        setModalPrice(String(price));
+      }
+    }
+  }, [modalService, selectedPetId, isAddingNewPet, newPets, servicesList, newAptModal]);
 
   const handlePhoneLookup = async () => {
     const raw = modalPhone;
@@ -984,18 +1017,7 @@ export default function Agendamentos() {
 
               <div>
                 <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Tipo de serviço</Label>
-                <Select value={modalService} onValueChange={v => {
-                  setModalService(v);
-                  const svc = servicesList.find(s => s.name === v);
-                  const petSize = foundTutor
-                    ? (isAddingNewPet ? newPets[0]?.size : foundTutor.pets.find(p => p.id === selectedPetId)?.size)
-                    : newPets[0]?.size;
-                  if (svc && petSize) {
-                    const s = petSize.toLowerCase();
-                    const price = s.includes('peq') ? svc.price_pequeno : s.includes('gran') ? svc.price_grande : svc.price_medio;
-                    if (price) setModalPrice(String(price));
-                  }
-                }}>
+                <Select value={modalService} onValueChange={(v) => setModalService(v)}>
                   <SelectTrigger className="h-[44px] text-base md:text-sm rounded-xl border-border/40 bg-card focus-visible:ring-primary/20">
                     <SelectValue placeholder="Selecione o serviço" />
                   </SelectTrigger>

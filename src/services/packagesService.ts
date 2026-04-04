@@ -68,21 +68,23 @@ export interface CustomerPackageUpdate {
   observation?: string | null;
 }
 
-export async function getPackages(): Promise<PackageRow[]> {
+export async function getPackages(petshopId?: string): Promise<PackageRow[]> {
+  const targetId = petshopId || PETSHOP_ID;
   const { data, error } = await supabase
     .from('packages')
     .select('*')
-    .eq('petshop_id', PETSHOP_ID)
+    .eq('petshop_id', targetId)
     .order('name');
   if (error) return [];
   return (data || []) as PackageRow[];
 }
 
-export async function getCustomerPackages(): Promise<CustomerPackageRow[]> {
+export async function getCustomerPackages(petshopId?: string): Promise<CustomerPackageRow[]> {
+  const targetId = petshopId || PETSHOP_ID;
   const { data, error } = await supabase
     .from('customer_packages')
     .select('*, packages(name, type, interval_days), pets(name, size, breed)')
-    .eq('petshop_id', PETSHOP_ID)
+    .eq('petshop_id', targetId)
     .order('created_at', { ascending: false });
   
   if (error) { console.error('getCustomerPackages error:', error); return []; }
@@ -116,9 +118,10 @@ export async function createCustomerPackage(data: {
   pet_id?: string;
   start_date?: string;
   observation?: string;
-}): Promise<CustomerPackageRow | null> {
+}, petshopId?: string): Promise<CustomerPackageRow | null> {
+  const targetId = petshopId || PETSHOP_ID;
   const insertData: CustomerPackageInsert = {
-    petshop_id: PETSHOP_ID,
+    petshop_id: targetId,
     customer_id: data.customer_id,
     package_id: data.package_id,
     pet_id: data.pet_id || null,

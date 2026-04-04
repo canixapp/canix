@@ -28,20 +28,12 @@ export async function getProfile(userId: string): Promise<ProfileRow | null> {
   return data as ProfileRow | null;
 }
 
-export async function getClientProfiles(): Promise<ProfileRow[]> {
-  // Get all profiles that have 'cliente' role
-  const { data: roles } = await supabase
-    .from('user_roles')
-    .select('user_id')
-    .eq('role', 'cliente');
-  
-  if (!roles || roles.length === 0) return [];
-  
-  const userIds = roles.map(r => r.user_id);
+export async function getClientProfiles(petshopId?: string): Promise<ProfileRow[]> {
+  const targetId = petshopId || PETSHOP_ID;
   const { data, error } = await supabase
     .from('profiles')
     .select('*, pets!owner_id(id, name, size, breed)')
-    .in('user_id', userIds)
+    .eq('petshop_id', targetId)
     .order('name');
   
   if (error) return [];
@@ -75,12 +67,13 @@ export async function updateProfile(userId: string, data: ProfileUpdate): Promis
   return !error;
 }
 
-export async function getFeatureFlag(key: string): Promise<boolean> {
+export async function getFeatureFlag(key: string, petshopId?: string): Promise<boolean> {
+  const targetId = petshopId || PETSHOP_ID;
   const { data } = await supabase
     .from('feature_flags')
     .select('enabled')
     .eq('key', key)
-    .eq('petshop_id', PETSHOP_ID)
+    .eq('petshop_id', targetId)
     .maybeSingle();
   return data?.enabled === true;
 }

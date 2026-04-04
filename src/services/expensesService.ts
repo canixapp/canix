@@ -20,21 +20,23 @@ export interface ExpenseInsert {
   date: string;
 }
 
-export async function getExpenses(): Promise<ExpenseRow[]> {
+export async function getExpenses(petshopId?: string): Promise<ExpenseRow[]> {
+  const targetId = petshopId || PETSHOP_ID;
   const { data, error } = await supabase
     .from('expenses')
     .select('*')
-    .eq('petshop_id', PETSHOP_ID)
+    .eq('petshop_id', targetId)
     .order('date', { ascending: false });
   if (error) { console.error('getExpenses error:', error); return []; }
   return (data || []) as ExpenseRow[];
 }
 
-export async function getExpensesByPeriod(startDate: string, endDate: string): Promise<ExpenseRow[]> {
+export async function getExpensesByPeriod(startDate: string, endDate: string, petshopId?: string): Promise<ExpenseRow[]> {
+  const targetId = petshopId || PETSHOP_ID;
   const { data, error } = await supabase
     .from('expenses')
     .select('*')
-    .eq('petshop_id', PETSHOP_ID)
+    .eq('petshop_id', targetId)
     .gte('date', startDate)
     .lte('date', endDate)
     .order('date', { ascending: false });
@@ -47,9 +49,10 @@ export async function createExpense(data: {
   amount: number;
   category?: string;
   date?: string;
-}): Promise<ExpenseRow | null> {
+}, petshopId?: string): Promise<ExpenseRow | null> {
+  const targetId = petshopId || PETSHOP_ID;
   const insertData: ExpenseInsert = {
-    petshop_id: PETSHOP_ID,
+    petshop_id: targetId,
     description: data.description,
     amount: data.amount,
     category: data.category || 'geral',

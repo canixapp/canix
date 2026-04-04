@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePetshop } from '@/contexts/PetshopContext';
 import { useTestModes } from '@/contexts/TestModesContext';
 import * as servicesService from '@/services/servicesService';
 import * as appointmentsService from '@/services/appointmentsService';
@@ -10,7 +11,7 @@ import { createNotification } from '@/services/notificationsService';
 import * as packagesService from '@/services/packagesService';
 import * as profilesService from '@/services/profilesService';
 import * as petsService from '@/services/petsService';
-import { AppointmentStatus, PaymentMethod, PaymentStatus } from '@/lib/constants';
+import { PaymentMethod, PaymentStatus } from '@/lib/constants';
 
 interface AdminContextType {
   // Appointments
@@ -23,7 +24,7 @@ interface AdminContextType {
   completeAppointment: (id: string) => Promise<void>;
   setPayment: (id: string, status: PaymentStatus, method?: PaymentMethod, amount?: number) => Promise<void>;
   createAppointment: (data: Parameters<typeof appointmentsService.createAppointment>[0]) => Promise<appointmentsService.AppointmentRow | null>;
-  addPreAgendamento: (data: Parameters<typeof appointmentsService.createAppointment>[0]) => Promise<void>; // Alias for createAppointment for compatibility
+  addPreAgendamento: (data: Parameters<typeof appointmentsService.createAppointment>[0]) => Promise<void>;
 
   // Gallery
   galleryImages: galleryService.GalleryPhotoRow[];
@@ -70,13 +71,13 @@ interface AdminContextType {
   clientProfiles: profilesService.ProfileRow[];
   clientsLoading: boolean;
   refreshClients: () => Promise<void>;
-  tutors: profilesService.ProfileRow[]; // Alias
+  tutors: profilesService.ProfileRow[];
   getTutorByPhone: (phone: string) => profilesService.ProfileRow | undefined;
   addTutor: (data: profilesService.ProfileInsert) => Promise<void>;
   addPetToTutor: (tutorId: string, pet: petsService.PetInsert) => Promise<void>;
 
   // Admin Users
-  adminUsersList: profilesService.ProfileRow[]; // Using ProfileRow as placeholder for admin users
+  adminUsersList: profilesService.ProfileRow[];
   addAdminUser: (data: profilesService.ProfileInsert) => Promise<void>;
   deleteAdminUser: (id: string) => Promise<void>;
 
@@ -88,31 +89,123 @@ const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const { user, isAuthenticated } = useAuth();
+  const { petshop } = usePetshop();
   const { demoModeActive, demoData } = useTestModes();
   
   // State
   const [realAppointments, setRealAppointments] = useState<appointmentsService.AppointmentRow[]>([]);
   const [appointmentsLoading, setAppointmentsLoading] = useState(true);
-  
   const [gallery, setGallery] = useState<galleryService.GalleryPhotoRow[]>([]);
   const [galleryLoading, setGalleryLoading] = useState(true);
-  
   const [reviews, setReviews] = useState<reviewsService.ReviewRow[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
-  
   const [services, setServices] = useState<servicesService.ServiceRow[]>([]);
   const [servicesLoading, setServicesLoading] = useState(true);
-  
   const [customerPackages, setCustomerPackages] = useState<packagesService.CustomerPackageRow[]>([]);
   const [packageTypes, setPackageTypes] = useState<packagesService.PackageRow[]>([]);
   const [packagesLoading, setPackagesLoading] = useState(true);
-  
   const [realClientProfiles, setRealClientProfiles] = useState<profilesService.ProfileRow[]>([]);
   const [clientsLoading, setClientsLoading] = useState(true);
-  
   const [exportEnabled, setExportEnabled] = useState(false);
 
-  // Merge demo data when active
+  // Refresh functions
+  const refreshAppointments = useCallback(async () => {
+    if (!petshop?.id) return;
+    setAppointmentsLoading(true);
+    const data = await appointmentsService.getAppointmentsWithProfiles(petshop.id);
+    setRealAppointments(data);
+    setAppointmentsLoading(false);
+  }, [petshop?.id]);
+
+  const refreshGallery = useCallback(async () => {
+    if (!petshop?.id) return;
+    setGalleryLoading(true);
+    const data = await galleryService.getGalleryPhotos(petshop.id);
+    setGallery(data);
+    setGalleryLoading(false);
+  }, [petshop?.id]);
+
+  const refreshReviews = useCallback(async () => {
+    if (!petshop?.id) return;
+    setReviewsLoading(true);
+    const data = await reviewsService.getReviews(petshop.id);
+    setReviews(data);
+    setReviewsLoading(false);
+  }, [petshop?.id]);
+
+  const refreshServices = useCallback(async () => {
+    if (!petshop?.id) return;
+    setServicesLoading(true);
+    const data = await servicesService.getServices(petshop.id);
+    setServices(data);
+    setServicesLoading(false);
+  }, [petshop?.id]);
+
+  const refreshPackages = useCallback(async () => {
+    if (!petshop?.id) return;
+    setPackagesLoading(true);
+    const [types, customers] = await Promise.all([
+      packagesService.getPackages(petshop.id),
+      packagesService.getCustomerPackages(petshop.id),
+    ]);
+    setPackageTypes(types);
+    setCustomerPackages(customers);
+    setPackagesLoading(false);
+  }, [petshop?.id]);
+
+  const refreshClients = useCallback(async () => {
+    if (!petshop?.id) return;
+    setClientsLoading(true);
+    const data = await profilesService.getClientProfiles(petshop.id);
+    setRealClientProfiles(data);
+    setClientsLoading(false);
+  }, [petshop?.id]);
+
+  const loadFeatureFlags = useCallback(async () => {
+    if (!petshop?.id) return;
+    const enabled = await profilesService.getFeatureFlag('export_enabled', petshop.id);
+    setExportEnabled(enabled);
+  }, [petshop?.id]);
+
+  const loadAll = useCallback(async () => {
+    await Promise.all([
+      refreshAppointments(),
+      refreshGallery(),
+      refreshReviews(),
+      refreshServices(),
+      refreshPackages(),
+      refreshClients(),
+      loadFeatureFlags(),
+    ]);
+  }, [refreshAppointments, refreshGallery, refreshReviews, refreshServices, refreshPackages, refreshClients, loadFeatureFlags]);
+
+  // Load data effect
+  useEffect(() => {
+    if (!isAuthenticated || !petshop?.id) return;
+    loadAll();
+
+    const channel = supabase
+      .channel(`admin-appointments-${petshop.id}`)
+      .on(
+        'postgres_changes',
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'appointments',
+          filter: `petshop_id=eq.${petshop.id}`
+        },
+        () => {
+          refreshAppointments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isAuthenticated, petshop?.id, loadAll, refreshAppointments]);
+
+  // Memoized derived data
   const appointments = useMemo(() => {
     if (demoModeActive && demoData?.appointmentRows) {
       return [...realAppointments, ...demoData.appointmentRows];
@@ -127,97 +220,12 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return realClientProfiles;
   }, [realClientProfiles, demoModeActive, demoData]);
 
-  // Load data when authenticated
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    loadAll();
-
-    // Realtime subscription for appointments
-    const channel = supabase
-      .channel('admin-appointments-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'appointments' },
-        () => {
-          refreshAppointments();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [isAuthenticated]);
-
-  const loadAll = useCallback(async () => {
-    await Promise.all([
-      refreshAppointments(),
-      refreshGallery(),
-      refreshReviews(),
-      refreshServices(),
-      refreshPackages(),
-      refreshClients(),
-      loadFeatureFlags(),
-    ]);
-  }, []);
-
-  const refreshAppointments = useCallback(async () => {
-    setAppointmentsLoading(true);
-    const data = await appointmentsService.getAppointmentsWithProfiles();
-    setRealAppointments(data);
-    setAppointmentsLoading(false);
-  }, []);
-
-  const refreshGallery = useCallback(async () => {
-    setGalleryLoading(true);
-    const data = await galleryService.getGalleryPhotos();
-    setGallery(data);
-    setGalleryLoading(false);
-  }, []);
-
-  const refreshReviews = useCallback(async () => {
-    setReviewsLoading(true);
-    const data = await reviewsService.getReviews();
-    setReviews(data);
-    setReviewsLoading(false);
-  }, []);
-
-  const refreshServices = useCallback(async () => {
-    setServicesLoading(true);
-    const data = await servicesService.getServices();
-    setServices(data);
-    setServicesLoading(false);
-  }, []);
-
-  const refreshPackages = useCallback(async () => {
-    setPackagesLoading(true);
-    const [types, customers] = await Promise.all([
-      packagesService.getPackages(),
-      packagesService.getCustomerPackages(),
-    ]);
-    setPackageTypes(types);
-    setCustomerPackages(customers);
-    setPackagesLoading(false);
-  }, []);
-
-  const refreshClients = useCallback(async () => {
-    setClientsLoading(true);
-    const data = await profilesService.getClientProfiles();
-    setRealClientProfiles(data);
-    setClientsLoading(false);
-  }, []);
-
-  const loadFeatureFlags = useCallback(async () => {
-    const enabled = await profilesService.getFeatureFlag('export_enabled');
-    setExportEnabled(enabled);
-  }, []);
-
   // Appointment actions
   const confirmAppointment = useCallback(async (id: string) => {
     await appointmentsService.updateAppointmentStatus(id, 'confirmado');
     const appt = appointments.find(a => a.id === id);
     if (appt?.customer_id) {
-      createNotification({ user_id: appt.customer_id, title: 'Agendamento confirmado âœ…', description: `Seu agendamento de ${appt.service_name} foi confirmado.`, type: 'agendamento', link: '/area-cliente' }).catch(() => {});
+      createNotification({ user_id: appt.customer_id, title: 'Agendamento confirmado ✅', description: `Seu agendamento de ${appt.service_name} foi confirmado.`, type: 'agendamento', link: '/area-cliente' }).catch(() => {});
     }
     await refreshAppointments();
   }, [refreshAppointments, appointments]);
@@ -226,7 +234,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     await appointmentsService.rescheduleAppointment(id, newDate, newTime);
     const appt = appointments.find(a => a.id === id);
     if (appt?.customer_id) {
-      createNotification({ user_id: appt.customer_id, title: 'Agendamento remarcado ðŸ“…', description: `Seu agendamento foi remarcado para ${newDate} Ã s ${newTime}.`, type: 'agendamento', link: '/area-cliente' }).catch(() => {});
+      createNotification({ user_id: appt.customer_id, title: 'Agendamento remarcado 🗓️', description: `Seu agendamento foi remarcado para ${newDate} às ${newTime}.`, type: 'agendamento', link: '/area-cliente' }).catch(() => {});
     }
     await refreshAppointments();
   }, [refreshAppointments, appointments]);
@@ -235,7 +243,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     await appointmentsService.updateAppointmentStatus(id, 'cancelado', { cancel_reason: reason });
     const appt = appointments.find(a => a.id === id);
     if (appt?.customer_id) {
-      createNotification({ user_id: appt.customer_id, title: 'Agendamento cancelado âŒ', description: `Seu agendamento de ${appt.service_name} foi cancelado. Motivo: ${reason}`, type: 'agendamento', link: '/area-cliente' }).catch(() => {});
+      createNotification({ user_id: appt.customer_id, title: 'Agendamento cancelado ❌', description: `Seu agendamento de ${appt.service_name} foi cancelado. Motivo: ${reason}`, type: 'agendamento', link: '/area-cliente' }).catch(() => {});
     }
     await refreshAppointments();
   }, [refreshAppointments, appointments]);
@@ -244,7 +252,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     await appointmentsService.updateAppointmentStatus(id, 'realizado');
     const appt = appointments.find(a => a.id === id);
     if (appt?.customer_id) {
-      createNotification({ user_id: appt.customer_id, title: 'Agendamento concluÃ­do ðŸŽ‰', description: `Seu agendamento de ${appt.service_name} foi concluÃ­do. Obrigado!`, type: 'agendamento', link: '/area-cliente' }).catch(() => {});
+      createNotification({ user_id: appt.customer_id, title: 'Agendamento concluído 🎉', description: `Seu agendamento de ${appt.service_name} foi concluído. Obrigado!`, type: 'agendamento', link: '/area-cliente' }).catch(() => {});
     }
     await refreshAppointments();
   }, [refreshAppointments, appointments]);
@@ -255,10 +263,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }, [refreshAppointments]);
 
   const handleCreateAppointment = useCallback(async (data: Parameters<typeof appointmentsService.createAppointment>[0]) => {
-    const result = await appointmentsService.createAppointment(data);
+    const result = await appointmentsService.createAppointment(data, petshop?.id);
     await refreshAppointments();
     return result;
-  }, [refreshAppointments]);
+  }, [refreshAppointments, petshop?.id]);
 
   // Gallery actions
   const approvePhoto = useCallback(async (id: string, category?: string) => {
@@ -268,7 +276,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     });
     const photo = gallery.find(p => p.id === id);
     if (photo?.submitted_by_user_id) {
-      createNotification({ user_id: photo.submitted_by_user_id, title: 'Foto aprovada! ðŸŽ‰', description: 'Sua foto foi aprovada e jÃ¡ estÃ¡ visÃ­vel na galeria.', type: 'galeria', link: '/#galeria' }).catch(() => {});
+      createNotification({ user_id: photo.submitted_by_user_id, title: 'Foto aprovada! 🎉', description: 'Sua foto foi aprovada e já está visível na galeria.', type: 'galeria', link: '/#galeria' }).catch(() => {});
     }
     await refreshGallery();
   }, [refreshGallery, gallery]);
@@ -277,18 +285,16 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     await galleryService.updateGalleryPhoto(id, { moderation_status: 'rejeitado' });
     const photo = gallery.find(p => p.id === id);
     if (photo?.submitted_by_user_id) {
-      createNotification({ user_id: photo.submitted_by_user_id, title: 'Foto nÃ£o aprovada', description: 'Sua foto nÃ£o atendeu aos critÃ©rios da galeria.', type: 'galeria' }).catch(() => {});
+      createNotification({ user_id: photo.submitted_by_user_id, title: 'Foto não aprovada', description: 'Sua foto não atendeu aos critérios da galeria.', type: 'galeria' }).catch(() => {});
     }
     await refreshGallery();
   }, [refreshGallery, gallery]);
 
   const addPhoto = useCallback(async (data: Parameters<typeof galleryService.createGalleryPhoto>[0]) => {
-    const created = await galleryService.createGalleryPhoto(data);
-    if (!created) {
-      throw new Error('Falha ao salvar foto na galeria.');
-    }
+    const created = await galleryService.createGalleryPhoto(data, petshop?.id);
+    if (!created) throw new Error('Falha ao salvar foto na galeria.');
     await refreshGallery();
-  }, [refreshGallery]);
+  }, [refreshGallery, petshop?.id]);
 
   const updatePhotoCategory = useCallback(async (id: string, category: string) => {
     await galleryService.updateGalleryPhoto(id, { category });
@@ -300,7 +306,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     await reviewsService.updateReview(id, { moderation_status: 'aprovado' });
     const review = reviews.find(r => r.id === id);
     if (review?.user_id) {
-      createNotification({ user_id: review.user_id, title: 'AvaliaÃ§Ã£o aprovada! â­ ', description: 'Sua avaliaÃ§Ã£o foi aprovada e estÃ¡ visÃ­vel para todos.', type: 'avaliacao', link: '/#avaliacoes' }).catch(() => {});
+      createNotification({ user_id: review.user_id, title: 'Avaliação aprovada! ⭐', description: 'Sua avaliação foi aprovada e está visível para todos.', type: 'avaliacao', link: '/#avaliacoes' }).catch(() => {});
     }
     await refreshReviews();
   }, [refreshReviews, reviews]);
@@ -309,15 +315,15 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     await reviewsService.updateReview(id, { moderation_status: 'rejeitado' });
     const review = reviews.find(r => r.id === id);
     if (review?.user_id) {
-      createNotification({ user_id: review.user_id, title: 'AvaliaÃ§Ã£o nÃ£o aprovada', description: 'Sua avaliaÃ§Ã£o nÃ£o atendeu aos critÃ©rios de publicaÃ§Ã£o.', type: 'avaliacao' }).catch(() => {});
+      createNotification({ user_id: review.user_id, title: 'Avaliação não aprovada', description: 'Sua avaliação não atendeu aos critérios de publicação.', type: 'avaliacao' }).catch(() => {});
     }
     await refreshReviews();
   }, [refreshReviews, reviews]);
 
   const addReview = useCallback(async (data: Parameters<typeof reviewsService.createReview>[0]) => {
-    await reviewsService.createReview(data);
+    await reviewsService.createReview(data, petshop?.id);
     await refreshReviews();
-  }, [refreshReviews]);
+  }, [refreshReviews, petshop?.id]);
 
   const setShopResponse = useCallback(async (reviewId: string, response: string) => {
     await reviewsService.updateReview(reviewId, { shop_response: response });
@@ -326,9 +332,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   // Service actions
   const addService = useCallback(async (data: Omit<servicesService.ServiceInsert, 'petshop_id'>) => {
-    await servicesService.createService(data);
+    await servicesService.createService(data, petshop?.id);
     await refreshServices();
-  }, [refreshServices]);
+  }, [refreshServices, petshop?.id]);
 
   const handleUpdateService = useCallback(async (id: string, data: servicesService.ServiceUpdate) => {
     await servicesService.updateService(id, data);
@@ -342,9 +348,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   // Package actions
   const handleCreateCustomerPackage = useCallback(async (data: Parameters<typeof packagesService.createCustomerPackage>[0]) => {
-    await packagesService.createCustomerPackage(data);
+    await packagesService.createCustomerPackage(data, petshop?.id);
     await refreshPackages();
-  }, [refreshPackages]);
+  }, [refreshPackages, petshop?.id]);
 
   const handleToggleCustomerPackageStatus = useCallback(async (id: string) => {
     await packagesService.toggleCustomerPackageStatus(id);
@@ -367,7 +373,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       appointments, appointmentsLoading, refreshAppointments,
       confirmAppointment, rescheduleAppointment, cancelAdminAppointment, completeAppointment, setPayment,
       createAppointment: handleCreateAppointment,
-      addPreAgendamento: async (data: Parameters<typeof appointmentsService.createAppointment>[0]) => { await handleCreateAppointment(data); }, // Alias
+      addPreAgendamento: async (data) => { await handleCreateAppointment(data); },
 
       galleryImages: gallery, galleryLoading, refreshGallery,
       approvePhoto, rejectPhoto, addPhoto, updatePhotoCategory,
@@ -383,19 +389,18 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       toggleCustomerPackageStatus: handleToggleCustomerPackageStatus,
       updateCustomerPackage: handleUpdateCustomerPackage,
       
-      // Compatibility aliases
       adminPackages: customerPackages,
       addAdminPackage: handleCreateCustomerPackage,
       toggleAdminPackageStatus: handleToggleCustomerPackageStatus,
       updateAdminPackage: handleUpdateCustomerPackage,
 
       clientProfiles, clientsLoading, refreshClients,
-      tutors: clientProfiles, // Alias
+      tutors: clientProfiles,
       getTutorByPhone,
-      addTutor: async () => {}, // Not needed with direct profile creation in flow
-      addPetToTutor: async () => {}, // Not needed
+      addTutor: async () => {},
+      addPetToTutor: async () => {},
 
-      adminUsersList: [], // Mock for now
+      adminUsersList: [], 
       addAdminUser: async () => {},
       deleteAdminUser: async () => {},
 

@@ -32,11 +32,12 @@ export interface ReviewPhotoInsert {
   url: string;
 }
 
-export async function getReviews(status?: string): Promise<ReviewRow[]> {
+export async function getReviews(petshopId?: string, status?: string): Promise<ReviewRow[]> {
+  const targetId = petshopId || PETSHOP_ID;
   const query = supabase
     .from('reviews')
     .select('*, review_photos(url)')
-    .eq('petshop_id', PETSHOP_ID)
+    .eq('petshop_id', targetId)
     .order('created_at', { ascending: false });
   
   if (status) query.eq('moderation_status', status);
@@ -50,11 +51,12 @@ export async function getReviews(status?: string): Promise<ReviewRow[]> {
   })) as ReviewRow[];
 }
 
-export async function getApprovedReviews(limit?: number): Promise<ReviewRow[]> {
+export async function getApprovedReviews(limit?: number, petshopId?: string): Promise<ReviewRow[]> {
+  const targetId = petshopId || PETSHOP_ID;
   const query = supabase
     .from('reviews')
     .select('*, review_photos(url)')
-    .eq('petshop_id', PETSHOP_ID)
+    .eq('petshop_id', targetId)
     .eq('moderation_status', 'aprovado')
     .order('created_at', { ascending: false });
   
@@ -77,9 +79,10 @@ export async function createReview(data: {
   title?: string;
   comment?: string;
   photos?: string[];
-}): Promise<ReviewRow | null> {
+}, petshopId?: string): Promise<ReviewRow | null> {
+  const targetId = petshopId || PETSHOP_ID;
   const insertData: ReviewInsert = {
-    petshop_id: PETSHOP_ID,
+    petshop_id: targetId,
     user_id: data.user_id || null,
     name: data.name,
     pet_name: data.pet_name || '',

@@ -514,7 +514,7 @@ export default function Agendamentos() {
 
         {/* Bento Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-5 rounded-[2rem] bg-white border border-border/40 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-5 rounded-[2rem] bg-card border border-border/40 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
             <div className="absolute -right-2 -bottom-2 opacity-[0.03] group-hover:scale-110 transition-transform duration-500">
               <CalendarIcon size={120} />
             </div>
@@ -563,7 +563,7 @@ export default function Agendamentos() {
       </Button>
 
       {/* ─── INTEGRATED BENTO FILTER ─── */}
-      <div className="p-3 md:p-6 rounded-[2.5rem] bg-white border border-border/40 shadow-sm space-y-6">
+      <div className="p-3 md:p-6 rounded-[2.5rem] bg-card border border-border/40 shadow-sm space-y-6">
         <div className="flex flex-col md:flex-row gap-4 justify-between">
           <div className="flex-1 relative group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -696,7 +696,7 @@ export default function Agendamentos() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.4, delay: i * 0.05, ease: "easeOut" }}
-                className="group relative p-5 md:p-6 rounded-[2.5rem] bg-white border border-border/40 shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-300"
+                className="group relative p-5 md:p-6 rounded-[2.5rem] bg-card border border-border/40 shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-300"
               >
                 {/* Status indicator pill */}
                 <div className={`absolute top-6 right-6 flex items-center gap-2 px-3 py-1.5 rounded-full ${statusTheme.bg} border ${statusTheme.border}`}>
@@ -707,7 +707,7 @@ export default function Agendamentos() {
                 <div className="flex flex-col sm:flex-row gap-6">
                   {/* Photo/Avatar Block */}
                   <div className="relative shrink-0">
-                    <div className="w-24 h-24 rounded-[2rem] bg-surface-2 flex items-center justify-center border-4 border-white shadow-inner overflow-hidden group-hover:scale-105 transition-transform duration-500">
+                    <div className="w-24 h-24 rounded-[2rem] bg-surface flex items-center justify-center border-4 border-card shadow-inner overflow-hidden group-hover:scale-105 transition-transform duration-500">
                       <Dog className={`w-10 h-10 ${statusTheme.text} opacity-40`} />
                        {/* Overlay with size info */}
                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -769,7 +769,7 @@ export default function Agendamentos() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="col-span-full py-20 rounded-[3rem] bg-white border border-dashed border-muted-foreground/30 flex flex-col items-center justify-center text-center px-6"
+            className="col-span-full py-20 rounded-[3rem] bg-card border border-dashed border-muted-foreground/30 flex flex-col items-center justify-center text-center px-6"
           >
             <div className="w-20 h-20 rounded-[2rem] bg-surface-2 flex items-center justify-center mb-6">
               <CalendarIcon className="w-10 h-10 text-muted-foreground/40" />

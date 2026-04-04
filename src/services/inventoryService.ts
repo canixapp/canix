@@ -26,14 +26,42 @@ export interface InventoryInsert {
   supplier: string;
 }
 
-export async function getInventory(): Promise<InventoryRow[]> {
+export interface PetshopRow {
+  id: string;
+  name: string;
+  slug: string;
+  created_at: string;
+}
+
+export async function getInventory(petshopId?: string): Promise<InventoryRow[]> {
+  const targetId = petshopId || PETSHOP_ID;
   const { data, error } = await supabase
     .from('inventory')
     .select('*')
-    .eq('petshop_id', PETSHOP_ID)
+    .eq('petshop_id', targetId)
     .order('name');
   if (error) { console.error('getInventory error:', error); return []; }
   return (data || []) as InventoryRow[];
+}
+
+export async function getPetshopBySlug(slug: string): Promise<PetshopRow | null> {
+  const { data, error } = await supabase
+    .from('petshops')
+    .select('*')
+    .eq('slug', slug)
+    .maybeSingle();
+  if (error) { console.error('getPetshopBySlug error:', error); return null; }
+  return data as PetshopRow | null;
+}
+
+export async function getPetshopById(id: string): Promise<PetshopRow | null> {
+  const { data, error } = await supabase
+    .from('petshops')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) { console.error('getPetshopById error:', error); return null; }
+  return data as PetshopRow | null;
 }
 
 export async function createInventoryItem(data: {
@@ -44,9 +72,10 @@ export async function createInventoryItem(data: {
   purchase_price?: number;
   sale_price?: number;
   supplier?: string;
-}): Promise<InventoryRow | null> {
+}, petshopId?: string): Promise<InventoryRow | null> {
+  const targetId = petshopId || PETSHOP_ID;
   const insertData: InventoryInsert = {
-    petshop_id: PETSHOP_ID,
+    petshop_id: targetId,
     name: data.name,
     category: data.category || 'geral',
     quantity: data.quantity || 0,

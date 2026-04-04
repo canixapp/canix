@@ -1,14 +1,21 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAdmin } from '@/contexts/AdminContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePetshop } from '@/contexts/PetshopContext';
 import { useProAccess } from '@/hooks/useProAccess';
+import { useFeatureGate } from '@/hooks/useFeatureGate';
 import { Badge } from '@/components/ui/badge';
 import { ProCard } from '@/components/admin/ProGate';
 import { InfoTip } from '@/components/dashboard/InfoTip';
 import { PetReturnCard } from '@/components/dashboard/PetReturnCard';
+import OnboardingWizard from '@/components/admin/OnboardingWizard';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import {
   CalendarDays, Users, Clock, Dog, DollarSign, UserPlus,
   Lightbulb, CalendarCheck, TrendingUp, PieChart, Trophy, CalendarPlus,
+  Sparkles, ArrowRight, Zap, PartyPopper
 } from 'lucide-react';
 import { format, parseISO, subDays, isAfter, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -43,24 +50,49 @@ function getServiceColor(name: string): { dot: string; bg: string } {
 export default function Dashboard() {
   const { appointments } = useAdmin();
   const { user } = useAuth();
+  const { petshop, appVersion } = usePetshop();
   const { isProActive } = useProAccess();
-
+  const [searchParams] = useSearchParams();
+  const isV1_1 = useFeatureGate("1.1");
+  const isV2 = useFeatureGate("2.0");
+  
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [clientProfiles, setClientProfiles] = useState<profilesService.ProfileRow[]>([]);
   const [allPets, setAllPets] = useState<petsService.PetRow[]>([]);
   const [expenses, setExpenses] = useState<expensesService.ExpenseRow[]>([]);
+  const [showReleaseNotes, setShowReleaseNotes] = useState(false);
 
   useEffect(() => {
     profilesService.getClientProfiles().then(setClientProfiles);
     petsService.getAllPets().then(setAllPets);
     expensesService.getExpenses().then(setExpenses);
-  }, []);
+
+    // Mágica: Abre onboarding obrigatoriamente se nunca foi concluído no banco
+    if (petshop && petshop.onboarding_completed === false) {
+      setShowOnboarding(true);
+    }
+    
+    // Mostra Release Notes se houver uma versão nova não vista
+    const releaseNotes = (petshop?.settings as any)?.last_release_notes;
+    if (petshop?.app_version && releaseNotes && releaseNotes.trim().length > 0) {
+      const seenVersion = localStorage.getItem('seen_release_version');
+      if (seenVersion !== String(petshop.app_version)) {
+        setShowReleaseNotes(true);
+      }
+    }
+  }, [petshop?.onboarding_completed, petshop?.app_version, petshop?.settings]);
+
+  const handleCloseReleaseNotes = () => {
+    localStorage.setItem('seen_release_version', String(petshop?.app_version || ''));
+    setShowReleaseNotes(false);
+  };
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
   const todayAppointments = useMemo(() =>
     appointments
       .filter(a => a.date === todayStr && ['pendente', 'confirmado'].includes(a.status))
-      .sort((a, b) => a.time.localeCompare(b.time)),
+      .sort((a, b) => (a.time || "").localeCompare(b.time || "")),
     [appointments, todayStr]
   );
 
@@ -144,14 +176,67 @@ export default function Dashboard() {
   return (
     <div className="space-y-8 overflow-x-hidden pb-8">
       {/* ── Greeting ── */}
-      <motion.div variants={sectionAnim} initial="hidden" animate="visible">
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
-          {getGreeting()}, {firstName} 👋
-        </h1>
-        <p className="text-sm md:text-base text-muted-foreground mt-1">
-          Hoje é {todayCapitalized}
-        </p>
+      <motion.div variants={sectionAnim} initial="hidden" animate="visible" className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
+            {getGreeting()}, {firstName} 👋
+          </h1>
+          <p className="text-sm md:text-base text-muted-foreground mt-1 flex items-center gap-2">
+            Hoje é {todayCapitalized}
+            <Badge variant="secondary" className="text-[9px] font-mono h-4 px-1.5 bg-slate-500/10 text-slate-600 border-slate-500/20">
+              v{appVersion}
+            </Badge>
+          </p>
+        </div>
+
+        {/* Banner de Onboarding (Se incompleto e não aberto) */}
+        {!petshop?.onboarding_completed && !showOnboarding && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            onClick={() => setShowOnboarding(true)}
+            className="group flex items-center gap-4 p-4 bg-gradient-to-br from-[#006C51] to-[#02BF93] rounded-[2rem] text-white shadow-xl shadow-[#02BF93]/20 hover:shadow-2xl hover:shadow-[#02BF93]/40 transition-all active:scale-95 text-left"
+          >
+            <div className="p-3 bg-white/20 rounded-2xl">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Configuração Incompleta</p>
+              <p className="text-sm font-bold">Finalizar Onboarding <ArrowRight className="inline-block w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" /></p>
+            </div>
+          </motion.button>
+        )}
       </motion.div>
+
+      {/* Onboarding Wizard Modal */}
+      <OnboardingWizard 
+        isOpen={showOnboarding} 
+        onClose={() => setShowOnboarding(false)} 
+      />
+
+      {/* Release Notes Modal (Client Side) */}
+      <Dialog open={showReleaseNotes} onOpenChange={setShowReleaseNotes}>
+        <DialogContent className="rounded-[2.5rem] p-0 max-w-md border-none overflow-hidden bg-transparent shadow-none [&>button]:hidden">
+           <div className="w-full p-8 rounded-[2rem] bg-gradient-to-br from-[#141B2B] to-[#1E293B] text-white shadow-2xl relative overflow-hidden backdrop-blur-2xl">
+              <div className="absolute top-0 right-0 p-6 opacity-10">
+                 <Zap size={100} />
+              </div>
+              <Badge className="bg-[#02BF93] text-white border-none mb-4 font-bold tracking-widest text-[10px]">NOVIDADE NO CANIX • v{appVersion}</Badge>
+              <h4 className="text-2xl font-black mb-4 tracking-tight flex items-center gap-2">
+                O sistema evoluiu! <PartyPopper className="text-[#02BF93]" size={24} />
+              </h4>
+              <p className="text-gray-400 text-sm leading-relaxed mb-8 whitespace-pre-wrap">
+                 {(petshop?.settings as any)?.last_release_notes}
+              </p>
+              <Button 
+                onClick={handleCloseReleaseNotes}
+                className="w-full h-12 rounded-xl bg-white text-black font-bold hover:bg-gray-100 border-none transition-transform active:scale-95"
+              >
+                 Entendi, vamos lá!
+              </Button>
+           </div>
+        </DialogContent>
+      </Dialog>
 
       {/* ── LINHA 1 — Lembretes Inteligentes ── */}
       <motion.section variants={sectionAnim} initial="hidden" animate="visible">
@@ -361,6 +446,45 @@ export default function Dashboard() {
           <PetReturnCard appointments={appointments} pets={allPets} profiles={clientProfiles} />
         </motion.section>
       </ProCard>
+
+      {/* ── FUNCIONALIDADE V2 (EXPERIMENTAL) ── */}
+      {isV2 && (
+        <motion.section 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-600 p-8 text-white shadow-2xl shadow-indigo-500/20"
+        >
+          <div className="absolute top-0 right-0 p-6 opacity-10">
+            <Sparkles size={120} />
+          </div>
+          
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md">
+                <Zap size={20} className="text-yellow-300" />
+              </div>
+              <Badge variant="outline" className="border-white/30 text-white bg-white/10 uppercase tracking-widest text-[10px]">
+                Versão v2 • Beta
+              </Badge>
+            </div>
+            
+            <h2 className="text-2xl font-bold mb-2">Insights Preditivos de Receita</h2>
+            <p className="text-indigo-100/80 text-sm max-w-xl mb-6">
+              Detectamos uma tendência de crescimento de 15% nos serviços de Tosa Higiênica. 
+              Sugerimos abrir mais 2 horários na próxima quarta-feira para maximizar sua agenda.
+            </p>
+            
+            <div className="flex gap-4">
+              <button className="px-6 py-2.5 bg-white text-indigo-600 rounded-full font-bold text-sm hover:scale-105 transition-transform">
+                Aplicar Sugestão
+              </button>
+              <button className="px-6 py-2.5 bg-indigo-500/30 text-white border border-white/20 rounded-full font-bold text-sm hover:bg-indigo-500/40 transition-colors">
+                Ver Relatório Completo
+              </button>
+            </div>
+          </div>
+        </motion.section>
+      )}
     </div>
   );
 }

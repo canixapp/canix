@@ -16,18 +16,19 @@ export interface ServiceRow {
   petshop_id: string;
 }
 
-export async function getServices(): Promise<ServiceRow[]> {
+export async function getServices(petshopId?: string): Promise<ServiceRow[]> {
+  const targetId = petshopId || PETSHOP_ID;
   const { data, error } = await supabase
     .from('services')
     .select('*')
-    .eq('petshop_id', PETSHOP_ID)
+    .eq('petshop_id', targetId)
     .order('sort_order', { ascending: true });
   if (error) { console.error('getServices error:', error); return []; }
   return (data || []) as ServiceRow[];
 }
 
-export async function getActiveServices(): Promise<ServiceRow[]> {
-  const all = await getServices();
+export async function getActiveServices(petshopId?: string): Promise<ServiceRow[]> {
+  const all = await getServices(petshopId);
   return all.filter(s => s.active !== false);
 }
 
@@ -58,8 +59,9 @@ export interface ServiceUpdate {
   sort_order?: number | null;
 }
 
-export async function createService(data: Omit<ServiceInsert, 'petshop_id'>): Promise<ServiceRow> {
-  const insertData: ServiceInsert = { ...data, petshop_id: PETSHOP_ID };
+export async function createService(data: Omit<ServiceInsert, 'petshop_id'>, petshopId?: string): Promise<ServiceRow> {
+  const targetId = petshopId || PETSHOP_ID;
+  const insertData: ServiceInsert = { ...data, petshop_id: targetId };
   const { data: row, error } = await supabase
     .from('services')
     .insert(insertData)

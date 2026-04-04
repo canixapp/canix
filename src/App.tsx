@@ -1,9 +1,10 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useMemo } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import HubLayout from "@/components/hub/HubLayout";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AdminProvider } from "@/contexts/AdminContext";
@@ -19,8 +20,19 @@ import { CookieConsentModal } from "@/components/modals/CookieConsentModal";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
+import { getTenantSlug } from "@/lib/tenant";
 
-// Lazy-loaded routes for code splitting
+// Lazy-loaded HUB
+const HubDashboard = lazy(() => import("./pages/hub/Dashboard"));
+const HubLicenses = lazy(() => import("./pages/hub/Licenses"));
+const HubPlans = lazy(() => import("./pages/hub/Plans"));
+const HubSecurity = lazy(() => import("./pages/hub/Security"));
+const HubSettings = lazy(() => import("./pages/hub/Settings"));
+const HubPrototype = lazy(() => import("./pages/hub/Prototype"));
+const HubLogin = lazy(() => import("./pages/hub/Login"));
+import HubProtectedRoute from "@/components/hub/HubProtectedRoute";
+
+// Lazy-loaded routes for code splitting (Retail App)
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const LoginPage = lazy(() => import("./pages/auth/LoginPage"));
 const RegisterPage = lazy(() => import("./pages/auth/RegisterPage"));
@@ -72,118 +84,143 @@ function ProfileCompletionGate() {
   );
 }
 
-// Minimal fallback for lazy routes
 const RouteFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
     <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
   </div>
 );
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="system" storageKey="petcao-theme" enableSystem>
-      <PetshopProvider>
-        <BrandingProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <AuthProvider>
-                <TestModesProvider>
-                <AdminProvider>
-                  <ProfileCompletionGate />
-                  <TestModeIndicator />
-                  <LoginNotificationToast />
+const App = () => {
+  const tenantSlug = useMemo(() => getTenantSlug(), []);
 
-                  <CookieConsentModal />
-                  <Suspense fallback={<RouteFallback />}>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/auth/login" element={<LoginPage />} />
-                      <Route path="/auth/register" element={<RegisterPage />} />
-                      <Route path="/auth/forgot" element={<ForgotPasswordPage />} />
-                      <Route path="/cliente" element={<ProfilePage />} />
-                      <Route path="/perfil" element={<ProfilePage />} />
-                      {/* Admin routes */}
-                      <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-                      <Route path="/admin" element={
-                        <ProtectedRoute allowedRoles={['dev', 'admin', 'midia']}>
-                          <AdminLayout />
-                        </ProtectedRoute>
-                      }>
-                        <Route path="dashboard" element={
-                          <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="dashboard"><Dashboard /></ProtectedRoute>
-                        } />
-                        <Route path="agendamentos" element={
-                          <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="agendamentos"><Agendamentos /></ProtectedRoute>
-                        } />
-                        <Route path="pacotes" element={
-                          <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="pacotes"><Pacotes /></ProtectedRoute>
-                        } />
-                        <Route path="clientes" element={
-                          <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="clientes"><Clientes /></ProtectedRoute>
-                        } />
-                        <Route path="valores" element={<Navigate to="/admin/servicos" replace />} />
-                        <Route path="moderacao" element={
-                          <ProtectedRoute allowedRoles={['dev', 'admin', 'midia']} pageKey="moderacao"><Moderacao /></ProtectedRoute>
-                        } />
-                        <Route path="servicos" element={
-                          <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="servicos"><Servicos /></ProtectedRoute>
-                        } />
-                        <Route path="usuarios" element={
-                          <ProtectedRoute allowedRoles={['dev']}><Usuarios /></ProtectedRoute>
-                        } />
-                        <Route path="configuracoes" element={
-                          <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="configuracoes"><Configuracoes /></ProtectedRoute>
-                        } />
-                        <Route path="audit-log" element={
-                          <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="configuracoes"><AuditLog /></ProtectedRoute>
-                        } />
-                        <Route path="pets" element={
-                          <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="clientes"><Pets /></ProtectedRoute>
-                        } />
-                        <Route path="pet/:petId" element={
-                          <ProtectedRoute allowedRoles={['dev', 'admin']}><PetProfile /></ProtectedRoute>
-                        } />
-                        <Route path="financeiro" element={
-                          <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="dashboard"><Financeiro /></ProtectedRoute>
-                        } />
-                        <Route path="estoque" element={
-                          <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="dashboard"><Estoque /></ProtectedRoute>
-                        } />
-                        <Route path="relatorios" element={
-                          <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="dashboard"><Relatorios /></ProtectedRoute>
-                        } />
-                        <Route path="lembretes" element={
-                          <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="dashboard"><Lembretes /></ProtectedRoute>
-                        } />
-                        <Route path="marketing" element={
-                          <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="dashboard"><Marketing /></ProtectedRoute>
-                        } />
-                      </Route>
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider attribute="class" defaultTheme="system" storageKey="petcao-theme" enableSystem>
+        <PetshopProvider>
+          <BrandingProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <Router>
+                <AuthProvider>
+                  <TestModesProvider>
+                  <AdminProvider>
+                    <ProfileCompletionGate />
+                    <TestModeIndicator />
+                    <LoginNotificationToast />
+                    <CookieConsentModal />
 
-                      {/* DevTools — standalone layout */}
-                      <Route path="/admin/devtools" element={
-                        <ProtectedRoute allowedRoles={['dev']}><DevTools /></ProtectedRoute>
-                      } />
+                    <Suspense fallback={<RouteFallback />}>
+                      <Routes>
+                        {/* Se não houver slug, renderizamos o HUB */}
+                        {!tenantSlug ? (
+                          <>
+                            <Route path="/login" element={<HubLogin />} />
+                            <Route element={<HubProtectedRoute />}>
+                              <Route element={<HubLayout children={<Outlet />} />}>
+                                <Route path="/" element={<HubDashboard />} />
+                                <Route path="/licenses" element={<HubLicenses />} />
+                                <Route path="/prototype" element={<HubPrototype />} />
+                                <Route path="/plans" element={<HubPlans />} />
+                                <Route path="/security" element={<HubSecurity />} />
+                                <Route path="/settings" element={<HubSettings />} />
+                              </Route>
+                            </Route>
+                            <Route path="/admin/*" element={<Navigate to="/" replace />} />
+                          </>
+                        ) : (
+                          <>
+                            <Route path="/" element={<Index />} />
+                            <Route path="/auth/login" element={<LoginPage />} />
+                            <Route path="/auth/register" element={<RegisterPage />} />
+                            <Route path="/auth/forgot" element={<ForgotPasswordPage />} />
+                            <Route path="/cliente" element={<ProfilePage />} />
+                            <Route path="/perfil" element={<ProfilePage />} />
+                            
+                            {/* Admin routes for Tenants */}
+                            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+                            <Route path="/admin" element={
+                              <ProtectedRoute allowedRoles={['dev', 'admin', 'midia']}>
+                                <AdminLayout />
+                              </ProtectedRoute>
+                            }>
+                              <Route path="dashboard" element={
+                                <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="dashboard"><Dashboard /></ProtectedRoute>
+                              } />
+                              <Route path="agendamentos" element={
+                                <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="agendamentos"><Agendamentos /></ProtectedRoute>
+                              } />
+                              <Route path="pacotes" element={
+                                <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="pacotes"><Pacotes /></ProtectedRoute>
+                              } />
+                              <Route path="clientes" element={
+                                <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="clientes"><Clientes /></ProtectedRoute>
+                              } />
+                              <Route path="valores" element={<Navigate to="/admin/servicos" replace />} />
+                              <Route path="moderacao" element={
+                                <ProtectedRoute allowedRoles={['dev', 'admin', 'midia']} pageKey="moderacao"><Moderacao /></ProtectedRoute>
+                              } />
+                              <Route path="servicos" element={
+                                <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="servicos"><Servicos /></ProtectedRoute>
+                              } />
+                              <Route path="usuarios" element={
+                                <ProtectedRoute allowedRoles={['dev']}><Usuarios /></ProtectedRoute>
+                              } />
+                              <Route path="configuracoes" element={
+                                <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="configuracoes"><Configuracoes /></ProtectedRoute>
+                              } />
+                              <Route path="audit-log" element={
+                                <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="configuracoes"><AuditLog /></ProtectedRoute>
+                              } />
+                              <Route path="pets" element={
+                                <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="clientes"><Pets /></ProtectedRoute>
+                              } />
+                              <Route path="pet/:petId" element={
+                                <ProtectedRoute allowedRoles={['dev', 'admin']}><PetProfile /></ProtectedRoute>
+                              } />
+                              <Route path="financeiro" element={
+                                <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="dashboard"><Financeiro /></ProtectedRoute>
+                              } />
+                              <Route path="estoque" element={
+                                <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="dashboard"><Estoque /></ProtectedRoute>
+                              } />
+                              <Route path="relatorios" element={
+                                <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="dashboard"><Relatorios /></ProtectedRoute>
+                              } />
+                              <Route path="lembretes" element={
+                                <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="dashboard"><Lembretes /></ProtectedRoute>
+                              } />
+                              <Route path="marketing" element={
+                                <ProtectedRoute allowedRoles={['dev', 'admin']} pageKey="dashboard"><Marketing /></ProtectedRoute>
+                              } />
+                            </Route>
 
-                      {/* Super Dev Panel */}
-                      <Route path="/dev-tools" element={
-                        <ProtectedRoute allowedRoles={['dev', 'admin']}><DevToolsPanel /></ProtectedRoute>
-                      } />
+                            {/* DevTools — standalone layout */}
+                            <Route path="/admin/devtools" element={
+                              <ProtectedRoute allowedRoles={['dev']}><DevTools /></ProtectedRoute>
+                            } />
 
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </Suspense>
-                </AdminProvider>
-                </TestModesProvider>
-              </AuthProvider>
-            </BrowserRouter>
-          </TooltipProvider>
-        </BrandingProvider>
-      </PetshopProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-);
+                            {/* Super Dev Panel */}
+                            <Route path="/dev-tools" element={
+                              <ProtectedRoute allowedRoles={['dev', 'admin']}><DevToolsPanel /></ProtectedRoute>
+                            } />
+                          </>
+                        )}
+
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </Suspense>
+                  </AdminProvider>
+                  </TestModesProvider>
+                </AuthProvider>
+              </Router>
+            </TooltipProvider>
+          </BrandingProvider>
+        </PetshopProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+};
+
 
 export default App;

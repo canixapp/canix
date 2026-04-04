@@ -44,11 +44,12 @@ export interface GalleryPhotoUpdate {
   url?: string;
 }
 
-export async function getGalleryPhotos(status?: string): Promise<GalleryPhotoRow[]> {
+export async function getGalleryPhotos(petshopId?: string, status?: string): Promise<GalleryPhotoRow[]> {
+  const targetId = petshopId || PETSHOP_ID;
   const query = supabase
     .from('gallery_photos')
     .select('*')
-    .eq('petshop_id', PETSHOP_ID)
+    .eq('petshop_id', targetId)
     .order('created_at', { ascending: false });
   
   if (status) {
@@ -60,11 +61,12 @@ export async function getGalleryPhotos(status?: string): Promise<GalleryPhotoRow
   return (data || []) as GalleryPhotoRow[];
 }
 
-export async function getApprovedPhotos(limit?: number): Promise<GalleryPhotoRow[]> {
+export async function getApprovedPhotos(limit?: number, petshopId?: string): Promise<GalleryPhotoRow[]> {
+  const targetId = petshopId || PETSHOP_ID;
   const query = supabase
     .from('gallery_photos')
     .select('*')
-    .eq('petshop_id', PETSHOP_ID)
+    .eq('petshop_id', targetId)
     .eq('moderation_status', 'aprovado')
     .order('created_at', { ascending: false });
   
@@ -86,9 +88,10 @@ export async function createGalleryPhoto(data: {
   owner_name?: string;
   pet_name?: string;
   moderation_status?: string;
-}): Promise<GalleryPhotoRow | null> {
+}, petshopId?: string): Promise<GalleryPhotoRow | null> {
+  const targetId = petshopId || PETSHOP_ID;
   const insertData: GalleryPhotoInsert = {
-    petshop_id: PETSHOP_ID,
+    petshop_id: targetId,
     url: data.url,
     alt: data.alt || '',
     caption: data.caption || '',

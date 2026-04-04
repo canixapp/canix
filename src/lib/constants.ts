@@ -57,6 +57,7 @@ export interface PetshopSettings {
   openDaysDefault: string[];
   openTimeDefault: string;
   closeTimeDefault: string;
+  paymentMethods?: string[];
   dateOverrides: DateOverride[];
 
   // Display limits
@@ -135,6 +136,7 @@ export const DEFAULT_SETTINGS: PetshopSettings = {
   openDaysDefault: ['ter', 'qua', 'qui', 'sex', 'sab'],
   openTimeDefault: '09:00',
   closeTimeDefault: '18:00',
+  paymentMethods: ['Pix', 'Cartão de Crédito', 'Dinheiro'],
   dateOverrides: [],
 
   limiteHomeFotos: 10,

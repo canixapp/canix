@@ -71,11 +71,12 @@ export interface AppointmentPetInsert {
   pet_breed: string | null;
 }
 
-export async function getAppointments(): Promise<AppointmentRow[]> {
+export async function getAppointments(petshopId?: string): Promise<AppointmentRow[]> {
+  const targetId = petshopId || PETSHOP_ID;
   const { data, error } = await supabase
     .from('appointments')
     .select(`*, appointment_pets(*)`)
-    .eq('petshop_id', PETSHOP_ID)
+    .eq('petshop_id', targetId)
     .order('date', { ascending: false })
     .order('time', { ascending: false });
   if (error) { console.error('getAppointments error:', error); return []; }
@@ -85,8 +86,8 @@ export async function getAppointments(): Promise<AppointmentRow[]> {
   })) as AppointmentRow[];
 }
 
-export async function getAppointmentsWithProfiles(): Promise<AppointmentRow[]> {
-  const appointments = await getAppointments();
+export async function getAppointmentsWithProfiles(petshopId?: string): Promise<AppointmentRow[]> {
+  const appointments = await getAppointments(petshopId);
   if (appointments.length === 0) return [];
 
   const customerIds = [...new Set(appointments.map(a => a.customer_id))];
@@ -118,9 +119,10 @@ export async function createAppointment(data: {
   origin?: string;
   notes?: string;
   pets: { pet_id: string; pet_name: string; pet_size?: string; pet_breed?: string }[];
-}): Promise<AppointmentRow | null> {
+}, petshopId?: string): Promise<AppointmentRow | null> {
+  const targetId = petshopId || PETSHOP_ID;
   const insertData: AppointmentInsert = {
-    petshop_id: PETSHOP_ID,
+    petshop_id: targetId,
     customer_id: data.customer_id,
     service_name: data.service_name,
     service_id: data.service_id || null,

@@ -1,5 +1,5 @@
-import React from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import { 
   Activity, 
   Key, 
@@ -16,15 +16,32 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import HubErrorBoundary from "./HubErrorBoundary";
 
 interface HubLayoutProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 const HubLayout = ({ children }: HubLayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([
+    { id: 1, title: 'Nova Licença Ativada', msg: 'PetCão Master acaba de se tornar Premium!', type: 'success', time: '5m atrás', unread: true },
+    { id: 2, title: 'Falha de Sincronização', msg: 'Licença "Patinhas" falhou no backup automático.', type: 'error', time: '1h atrás', unread: true },
+    { id: 3, title: 'Atualização de Sistema', msg: 'Global Hub v1.0.4 aplicada com sucesso.', type: 'info', time: '3h atrás', unread: false },
+  ]);
+
+  const unreadCount = notifications.filter(n => n.unread).length;
+
+  const markAllRead = () => {
+    setNotifications(notifications.map(n => ({ ...n, unread: false })));
+  };
+
+  const clearNotifications = () => {
+    setNotifications([]);
+  };
 
   const menuItems = [
     { label: "Dashboard", path: "/", icon: Activity },
@@ -43,6 +60,7 @@ const HubLayout = ({ children }: HubLayoutProps) => {
   // Close mobile menu on navigation
   React.useEffect(() => {
     setIsMobileMenuOpen(false);
+    setIsNotificationsOpen(false);
   }, [location.pathname]);
 
   return (
@@ -172,7 +190,14 @@ const HubLayout = ({ children }: HubLayoutProps) => {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6C7A73]" size={16} />
               <input 
                 placeholder="Pesquisar lojistas..." 
-                className="bg-gray-50 dark:bg-gray-800/50 border-none rounded-xl pl-12 pr-6 py-2.5 text-sm focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all w-48 md:w-64 dark:text-white"
+                defaultValue={new URLSearchParams(location.search).get('q') || ''}
+                onChange={(e) => {
+                  const searchParams = new URLSearchParams(location.search);
+                  if (e.target.value) searchParams.set('q', e.target.value);
+                  else searchParams.delete('q');
+                  navigate(`${location.pathname}?${searchParams.toString()}`, { replace: true });
+                }}
+                className="bg-gray-50 dark:bg-gray-800/50 border-none rounded-xl pl-12 pr-6 py-2.5 text-sm focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all w-48 md:w-64 dark:text-white outline-none"
               />
             </div>
 
@@ -182,10 +207,93 @@ const HubLayout = ({ children }: HubLayoutProps) => {
               </div>
               
               <div className="relative">
-                <button className="p-2.5 sm:p-3 bg-gray-50 dark:bg-gray-800/50 text-[#141B2B] dark:text-white rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors relative">
+                <button 
+                  onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                  className="p-2.5 sm:p-3 bg-gray-50 dark:bg-gray-800/50 text-[#141B2B] dark:text-white rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors relative"
+                >
                   <Bell size={18} />
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-[#161B22]" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-[#161B22]" />
+                  )}
                 </button>
+
+                <AnimatePresence>
+                  {isNotificationsOpen && (
+                    <>
+                        <div 
+                          className="fixed inset-0 z-[60] bg-black/0 cursor-pointer" 
+                          onClick={() => setIsNotificationsOpen(false)} 
+                        />
+                        <motion.div 
+                          initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 15, scale: 0.95 }}
+                          className="fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 sm:mt-4 bg-white dark:bg-[#161B22] border border-gray-100 dark:border-gray-800 rounded-3xl shadow-2xl z-[70] overflow-hidden sm:w-96"
+                        >
+                        <div className="p-6 border-b border-gray-50 dark:border-gray-800 flex items-center justify-between">
+                          <h3 className="text-xs font-black uppercase tracking-widest text-[#1E293B] dark:text-white">Central de Notificações</h3>
+                          <div className="flex gap-4">
+                            {unreadCount > 0 && (
+                              <button 
+                                onClick={markAllRead}
+                                className="text-[9px] font-black uppercase tracking-[0.15em] text-[#2F7FD3] hover:underline"
+                              >
+                                Lidas
+                              </button>
+                            )}
+                            {notifications.length > 0 && (
+                              <button 
+                                onClick={clearNotifications}
+                                className="text-[9px] font-black uppercase tracking-[0.15em] text-red-500 hover:underline"
+                              >
+                                Limpar
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                          {notifications.length > 0 ? (
+                            notifications.map((n) => (
+                              <div 
+                                key={n.id} 
+                                className={`p-5 flex gap-4 transition-colors cursor-pointer border-b border-gray-50 dark:border-gray-800/50 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800/30 ${n.unread ? 'bg-blue-50/30 dark:bg-[#2F7FD3]/5' : ''}`}
+                              >
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                                  n.type === 'success' ? 'bg-emerald-500/10 text-emerald-500' : 
+                                  n.type === 'error' ? 'bg-red-500/10 text-red-500' : 
+                                  'bg-blue-500/10 text-blue-500'
+                                }`}>
+                                  {n.type === 'success' ? <Zap size={16} /> : 
+                                   n.type === 'error' ? <Shield size={16} /> : 
+                                   <Bell size={16} />}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex justify-between items-start mb-1">
+                                    <p className="text-[11px] font-bold text-[#1E293B] dark:text-white truncate">{n.title}</p>
+                                    <span className="text-[9px] font-medium text-[#6C7A73]">{n.time}</span>
+                                  </div>
+                                  <p className="text-[10px] text-[#6C7A73] leading-relaxed line-clamp-2">{n.msg}</p>
+                                  {n.unread && (
+                                    <div className="mt-2 w-1.5 h-1.5 bg-[#2F7FD3] rounded-full" />
+                                  )}
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="p-12 text-center">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-[#6C7A73] opacity-40">Nenhuma notificação</p>
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-4 bg-gray-50/50 dark:bg-black/20 border-t border-gray-50 dark:border-gray-800 flex justify-center">
+                          <button className="text-[9px] font-black uppercase tracking-widest text-[#6C7A73] hover:text-[#2F7FD3] transition-colors">
+                            Ver Histórico Completo →
+                          </button>
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
               </div>
 
               <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#2F7FD3] transition-all">
@@ -196,7 +304,9 @@ const HubLayout = ({ children }: HubLayoutProps) => {
         </header>
 
         <div className="p-4 sm:p-6 lg:p-10 max-w-[1600px] mx-auto w-full">
-          {children}
+          <HubErrorBoundary>
+            {children || <Outlet />}
+          </HubErrorBoundary>
         </div>
       </main>
     </div>

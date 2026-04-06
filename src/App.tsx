@@ -31,6 +31,7 @@ const HubSettings = lazy(() => import("./pages/hub/Settings"));
 const HubPrototype = lazy(() => import("./pages/hub/Prototype"));
 const HubLogin = lazy(() => import("./pages/hub/Login"));
 import HubProtectedRoute from "@/components/hub/HubProtectedRoute";
+import HubErrorBoundary from "@/components/hub/HubErrorBoundary";
 
 // Lazy-loaded routes for code splitting (Retail App)
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
@@ -114,10 +115,10 @@ const App = () => {
                       <Routes>
                         {/* Se não houver slug, renderizamos o HUB */}
                         {!tenantSlug ? (
-                          <>
+                          <Route element={<HubErrorBoundary />}>
                             <Route path="/login" element={<HubLogin />} />
                             <Route element={<HubProtectedRoute />}>
-                              <Route element={<HubLayout children={<Outlet />} />}>
+                              <Route element={<HubLayout />}>
                                 <Route path="/" element={<HubDashboard />} />
                                 <Route path="/licenses" element={<HubLicenses />} />
                                 <Route path="/prototype" element={<HubPrototype />} />
@@ -127,7 +128,7 @@ const App = () => {
                               </Route>
                             </Route>
                             <Route path="/admin/*" element={<Navigate to="/" replace />} />
-                          </>
+                          </Route>
                         ) : (
                           <>
                             <Route path="/" element={<Index />} />

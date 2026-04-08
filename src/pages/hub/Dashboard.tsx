@@ -579,45 +579,47 @@ const HubDashboard = () => {
                 ))}
               </div>
 
-              <div 
-                ref={chartScrollRef}
-                className={`relative z-10 scroll-smooth custom-scrollbar pb-4 pt-24 ${activeFilter === 'VIEW_12_MONTHS' ? 'overflow-x-auto px-4 sm:px-8' : 'overflow-hidden px-2 sm:px-4'}`}
-              >
+                <div 
+                  ref={chartScrollRef}
+                  className={`relative z-10 scroll-smooth custom-scrollbar pb-4 pt-24 ${activeFilter === 'VIEW_12_MONTHS' ? 'overflow-x-auto px-4 sm:px-8' : 'overflow-visible px-4 sm:px-12'}`}
+                >
                 {/* Subtítulo centralizado relativo ao gráfico - APENAS PARA DIA */}
                 <AnimatePresence mode="wait">
-                  {activeFilter === 'VIEW_7_DAYS' && (
-                    <motion.div 
-                      key="chart-subtitle-dia"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="absolute top-4 left-1/2 -translate-x-1/2 z-20 w-full text-center pointer-events-none"
-                    >
-                      <span className="text-[10px] font-black text-[#2F7FD3] dark:text-[#5AA0E9] uppercase tracking-[0.3em] px-4 py-1.5 rounded-full bg-blue-50/50 dark:bg-[#2F7FD3]/5 backdrop-blur-sm border border-blue-100/50 dark:border-blue-900/20 shadow-sm inline-block">
-                        Dados dos últimos 7 dias
-                      </span>
-                    </motion.div>
-                  )}
+                  <motion.div 
+                    key={`subtitle-${activeFilter}`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute top-4 left-1/2 -translate-x-1/2 z-20 w-full text-center pointer-events-none"
+                  >
+                    <span className="text-[10px] font-black text-[#2F7FD3] dark:text-[#5AA0E9] uppercase tracking-[0.3em] px-4 py-1.5 rounded-full bg-blue-50/50 dark:bg-[#2F7FD3]/5 backdrop-blur-sm border border-blue-100/50 dark:border-blue-900/20 shadow-sm inline-block">
+                      {activeFilter === 'VIEW_7_DAYS' ? 'Dados dos últimos 7 dias' : 
+                       activeFilter === 'VIEW_12_MONTHS' ? 'Dados dos últimos 12 meses' : 
+                       'Dados dos últimos 4 anos'}
+                    </span>
+                  </motion.div>
                 </AnimatePresence>
 
-                <div className={`w-full ${
+                <div 
+                  key={`chart-grid-${activeFilter}`}
+                  className={`w-full ${
                   activeFilter === 'VIEW_12_MONTHS' 
                     ? 'flex items-end justify-start min-w-full px-4 sm:px-8' 
-                    : 'flex items-end justify-center gap-1 sm:gap-4 px-4'
-                }`}>
+                    : activeFilter === 'VIEW_7_DAYS'
+                      ? 'grid grid-cols-7 gap-1 sm:gap-4 px-4 auto-cols-fr justify-items-center'
+                      : 'grid grid-cols-4 gap-4 px-10 sm:px-24 justify-items-center'
+                } items-end`}>
                   {stats.chartLabels.map((label, i) => {
                     const percentage = stats.chartDataPercent[i];
-                    const count = stats.chartDataCount[i];
+                    const count = stats.chartDataCount[i] || 0;
                     const isLast = i === stats.chartLabels.length - 1;
                     const isFocused = activeBarIndex === i;
 
                     return (
                       <div 
-                        key={`${activeFilter}-final-${i}-${label}`} 
-                        className={`flex flex-col items-center group/col transition-all duration-500 ${
-                          activeFilter === 'VIEW_12_MONTHS' 
-                            ? 'shrink-0 min-w-[50%] sm:min-w-[33.33%] lg:min-w-[16.66%]' 
-                            : 'flex-1 max-w-[14%]'
+                        key={`${activeFilter}-${i}-${label}`} 
+                        className={`flex flex-col items-center group/col transition-all duration-500 overflow-visible ${
+                          activeFilter === 'VIEW_12_MONTHS' ? 'shrink-0 min-w-[120px] sm:min-w-[160px]' : 'w-full max-w-[80px]'
                         }`}
                       >
                         <div className="relative w-full h-[250px] flex items-end justify-center mb-0">
@@ -794,12 +796,6 @@ const HubDashboard = () => {
                     Petshops no plano <span className="text-purple-400 font-black italic">Premium</span> possuem {stats.retentionAdvantage} mais retenção ao longo de 6 meses.
                   </p>
                   <button className="mt-4 text-[10px] font-black uppercase tracking-widest text-[#63C3D8] hover:text-white transition-colors text-left uppercase">Ver Estudo Interno →</button>
-                  
-                  {/* Pagination Dots */}
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-white opacity-100" />
-                    <div className="w-1.5 h-1.5 rounded-full bg-white opacity-30" />
-                  </div>
                 </motion.div>
               ) : (
                 <motion.div 
@@ -819,15 +815,15 @@ const HubDashboard = () => {
                     Temos <span className="text-emerald-400 font-black italic">{stats.trials} trials</span> ativos este mês. Taxa de conversão atual bateu <span className="text-emerald-400 font-black">63%</span>.
                   </p>
                   <button className="mt-4 text-[10px] font-black uppercase tracking-widest text-[#63C3D8] hover:text-white transition-colors text-left uppercase">Disparar Email Oferta →</button>
-                  
-                  {/* Pagination Dots */}
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-white opacity-30" />
-                    <div className="w-1.5 h-1.5 rounded-full bg-white opacity-100" />
-                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* Pagination Dots - Outside AnimatePresence but inside the relative container */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-30 pointer-events-none">
+              <div className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${insightIndex === 0 ? 'bg-white scale-125' : 'bg-white/20'}`} />
+              <div className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${insightIndex === 1 ? 'bg-white scale-125' : 'bg-white/20'}`} />
+            </div>
           </div>
           <div className="bg-white dark:bg-[#0D1117] rounded-[2rem] p-6 border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col items-center justify-center">
             <h3 className="text-[10px] font-black text-[#64748B] uppercase tracking-[0.2em] mb-4 w-full">Divisão de Planos</h3>

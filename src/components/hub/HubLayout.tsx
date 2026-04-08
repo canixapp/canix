@@ -269,9 +269,7 @@ const HubLayout = ({ children }: HubLayoutProps) => {
                <Search size={20} />
              </button>
              
-             <div className="hidden sm:block">
-               <ThemeToggle />
-             </div>
+            <ThemeToggle />
             
             <div className="relative group hidden xl:block" ref={searchBarRef}>
               <Search className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isSearchOpen ? 'text-[#2F7FD3]' : 'text-[#6C7A73]'}`} size={16} />

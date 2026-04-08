@@ -419,10 +419,6 @@ const HubLayout = ({ children }: HubLayoutProps) => {
 
 
             <div className="flex items-center gap-2 sm:gap-4 border-l dark:border-gray-700 pl-3 sm:pl-6">
-              <div className="hidden sm:block">
-                <ThemeToggle />
-              </div>
-              
               <div className="relative">
                 <button 
                   onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}

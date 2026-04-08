@@ -570,6 +570,23 @@ const HubDashboard = () => {
             </div>
 
             <div className="flex-1 relative flex flex-col justify-end">
+              {/* Subtítulo centralizado relativo ao gráfico - FIXED NO CENTER */}
+              <AnimatePresence mode="wait">
+                <motion.div 
+                  key={`subtitle-${activeFilter}`}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute top-4 inset-x-0 z-20 flex justify-center pointer-events-none"
+                >
+                  <span className="text-[10px] font-black text-[#2F7FD3] dark:text-[#5AA0E9] uppercase tracking-[0.3em] px-4 py-1.5 rounded-full bg-blue-50/50 dark:bg-[#2F7FD3]/5 backdrop-blur-sm border border-blue-100/50 dark:border-blue-900/20 shadow-sm">
+                    {activeFilter === 'VIEW_7_DAYS' ? 'Dados dos últimos 7 dias' : 
+                     activeFilter === 'VIEW_12_MONTHS' ? 'Dados dos últimos 12 meses' : 
+                     'Dados dos últimos 4 anos'}
+                  </span>
+                </motion.div>
+              </AnimatePresence>
+
               {/* Chart Grid Lines */}
               <div className="absolute inset-x-0 bottom-12 h-[250px] flex flex-col justify-between pointer-events-none px-4 sm:px-8 z-0">
                 {[100, 75, 50, 25, 0].map(val => (
@@ -579,36 +596,19 @@ const HubDashboard = () => {
                 ))}
               </div>
 
-                <div 
-                  ref={chartScrollRef}
-                  className={`relative z-10 scroll-smooth custom-scrollbar pb-4 pt-24 ${activeFilter === 'VIEW_12_MONTHS' ? 'overflow-x-auto px-4 sm:px-8' : 'overflow-visible px-4 sm:px-12'}`}
-                >
-                {/* Subtítulo centralizado relativo ao gráfico - APENAS PARA DIA */}
-                <AnimatePresence mode="wait">
-                  <motion.div 
-                    key={`subtitle-${activeFilter}`}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="absolute top-4 left-1/2 -translate-x-1/2 z-20 w-full text-center pointer-events-none"
-                  >
-                    <span className="text-[10px] font-black text-[#2F7FD3] dark:text-[#5AA0E9] uppercase tracking-[0.3em] px-4 py-1.5 rounded-full bg-blue-50/50 dark:bg-[#2F7FD3]/5 backdrop-blur-sm border border-blue-100/50 dark:border-blue-900/20 shadow-sm inline-block">
-                      {activeFilter === 'VIEW_7_DAYS' ? 'Dados dos últimos 7 dias' : 
-                       activeFilter === 'VIEW_12_MONTHS' ? 'Dados dos últimos 12 meses' : 
-                       'Dados dos últimos 4 anos'}
-                    </span>
-                  </motion.div>
-                </AnimatePresence>
-
+              <div 
+                ref={chartScrollRef}
+                className={`relative z-10 scroll-smooth custom-scrollbar pb-4 pt-24 ${activeFilter === 'VIEW_12_MONTHS' ? 'overflow-x-auto px-4 sm:px-8' : 'overflow-visible px-4 sm:px-12'}`}
+              >
                 <div 
                   key={`chart-grid-${activeFilter}`}
                   className={`w-full ${
-                  activeFilter === 'VIEW_12_MONTHS' 
-                    ? 'flex items-end justify-start min-w-full px-4 sm:px-8' 
-                    : activeFilter === 'VIEW_7_DAYS'
-                      ? 'grid grid-cols-7 gap-1 sm:gap-4 px-4 auto-cols-fr justify-items-center'
-                      : 'grid grid-cols-4 gap-4 px-10 sm:px-24 justify-items-center'
-                } items-end`}>
+                    activeFilter === 'VIEW_12_MONTHS' 
+                      ? 'flex items-end justify-start min-w-full px-4 sm:px-8' 
+                      : activeFilter === 'VIEW_7_DAYS'
+                        ? 'grid grid-cols-7 gap-1 sm:gap-4 px-4 auto-cols-fr justify-items-center'
+                        : 'grid grid-cols-4 gap-4 px-10 sm:px-24 justify-items-center'
+                  } items-end`}>
                   {stats.chartLabels.map((label, i) => {
                     const percentage = stats.chartDataPercent[i];
                     const count = stats.chartDataCount[i] || 0;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Package, AlertTriangle, Plus, Search, Edit2, Trash2, 
@@ -39,7 +39,7 @@ export default function Estoque() {
     purchase_price: 0, sale_price: 0, supplier: ''
   });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const data = await inventoryService.getInventory();
@@ -50,11 +50,11 @@ export default function Estoque() {
     } finally {
       setLoading(false);
     }
-  };
-
+  }, [toast]);
+ 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleSave = async () => {
     try {

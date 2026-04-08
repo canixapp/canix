@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAdmin } from '@/contexts/AdminContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,12 +32,7 @@ export default function PetProfile() {
   const [newNote, setNewNote] = useState('');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!petId) return;
-    loadData();
-  }, [petId]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!petId) return;
     setLoading(true);
     const allPets = await petsService.getAllPets();
@@ -51,7 +46,12 @@ export default function PetProfile() {
       setNotes(n);
     }
     setLoading(false);
-  };
+  }, [petId]);
+
+  useEffect(() => {
+    if (!petId) return;
+    loadData();
+  }, [petId, loadData]);
 
   const petAppointments = useMemo(() => {
     if (!petId) return [];

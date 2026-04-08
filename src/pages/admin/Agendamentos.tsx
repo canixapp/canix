@@ -161,7 +161,7 @@ export default function Agendamentos() {
         setModalPrice(String(price));
       }
     }
-  }, [modalService, selectedPetId, isAddingNewPet, newPets, servicesList, newAptModal]);
+  }, [modalService, selectedPetId, isAddingNewPet, newPets, servicesList, newAptModal, foundTutor]);
 
   const handlePhoneLookup = async () => {
     const raw = modalPhone;

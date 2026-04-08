@@ -150,12 +150,12 @@ export default function ProfilePage() {
   };
 
   const handleConfirmWA = (apt: Appointment) => {
-    const msg = `OlÃ¡! Gostaria de confirmar o agendamento do pet ${apt.petName} para ${apt.date} Ã s ${apt.time}, serviÃ§o ${apt.service}.`;
+    const msg = `OlÃ¡! Gostaria de confirmar o agendamento do pet ${apt.petName} para ${apt.date} Ã s ${apt.time}, serviÃ§o ${apt.service}.`;
     openPetshopWhatsApp(msg);
   };
 
   const handleAlter = (apt: Appointment) => {
-    const msg = `OlÃ¡! Gostaria de remarcar o agendamento do pet ${apt.petName} que estÃ¡ para ${apt.date} Ã s ${apt.time}, serviÃ§o ${apt.service}.`;
+    const msg = `OlÃ¡! Gostaria de remarcar o agendamento do pet ${apt.petName} que estÃ¡ para ${apt.date} Ã s ${apt.time}, serviÃ§o ${apt.service}.`;
     openPetshopWhatsApp(msg);
   };
 
@@ -166,7 +166,7 @@ export default function ProfilePage() {
     const finalReason = cancelReason === 'outro' ? cancelOther : cancelReason;
     if (!finalReason) { toast.error('Selecione um motivo'); return; }
     cancelAppointment(cancelTarget.id, finalReason);
-    const msg = `OlÃ¡! Gostaria de cancelar o agendamento do pet ${cancelTarget.petName} marcado para ${cancelTarget.date} Ã s ${cancelTarget.time}.`;
+    const msg = `OlÃ¡! Gostaria de cancelar o agendamento do pet ${cancelTarget.petName} marcado para ${cancelTarget.date} Ã s ${cancelTarget.time}.`;
     openPetshopWhatsApp(msg);
     setCancelModalOpen(false);
     toast.success('Cancelamento solicitado');
@@ -692,7 +692,7 @@ export default function ProfilePage() {
             <div className="p-3 bg-muted/50 rounded-xl text-sm space-y-0.5">
               <p><span className="font-medium">ServiÃ§o:</span> {cancelTarget.service}</p>
               <p><span className="font-medium">Pet:</span> {cancelTarget.petName}</p>
-              <p><span className="font-medium">Data:</span> {cancelTarget.date} Ã s {cancelTarget.time}</p>
+              <p><span className="font-medium">Data:</span> {cancelTarget.date} Ã s {cancelTarget.time}</p>
             </div>
           )}
           <div className="space-y-2">

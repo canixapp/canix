@@ -85,24 +85,27 @@ export function CalendarSection({ onOpenLogin }: CalendarSectionProps) {
     });
   };
 
-  const selectedPets = user?.pets.filter(p => selectedPetIds.includes(p.id)) ?? [];
-  const petsLabel = selectedPets.map(p => p.name).join(', ');
-
-  // Price calculation per pet
-  const petPriceDetails = useMemo(() => {
-    return selectedPets.map(pet => {
-      const serviceIds = petServices[pet.id] || [];
-      const items = serviceIds.map(sid => {
-        const svc = allServices.find(s => s.id === sid);
-        if (!svc) return null;
-        const price = getServicePriceBySize(svc, pet.size);
-        return { service: svc, price };
-      }).filter(Boolean) as { service: ServiceRow; price: number | null }[];
-      const hasInvalidPrice = items.some(i => i.price == null);
-      const subtotal = items.reduce((sum, i) => sum + (i.price || 0), 0);
-      return { pet, items, subtotal, hasInvalidPrice };
-    });
-  }, [selectedPets, petServices, allServices]);
+   const selectedPets = useMemo(() => 
+     user?.pets.filter(p => selectedPetIds.includes(p.id)) ?? [], 
+   [user?.pets, selectedPetIds]);
+ 
+   const petsLabel = selectedPets.map(p => p.name).join(', ');
+ 
+   // Price calculation per pet
+   const petPriceDetails = useMemo(() => {
+     return selectedPets.map(pet => {
+       const serviceIds = petServices[pet.id] || [];
+       const items = serviceIds.map(sid => {
+         const svc = allServices.find(s => s.id === sid);
+         if (!svc) return null;
+         const price = getServicePriceBySize(svc, pet.size);
+         return { service: svc, price };
+       }).filter(Boolean) as { service: ServiceRow; price: number | null }[];
+       const hasInvalidPrice = items.some(i => i.price == null);
+       const subtotal = items.reduce((sum, i) => sum + (i.price || 0), 0);
+       return { pet, items, subtotal, hasInvalidPrice };
+     });
+   }, [selectedPets, petServices, allServices]);
 
   const totalPrice = petPriceDetails.reduce((sum, p) => sum + p.subtotal, 0);
   const hasAnyInvalidPrice = petPriceDetails.some(p => p.hasInvalidPrice);

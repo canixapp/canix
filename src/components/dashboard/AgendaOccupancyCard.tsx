@@ -54,7 +54,7 @@ export function AgendaOccupancyCard({ appointments, settings }: AgendaOccupancyP
     
     const pct = totalWeekSlots > 0 ? Math.round((weekApts.length / totalWeekSlots) * 100) : 0;
     return { occupied: weekApts.length, total: totalWeekSlots, pct: Math.min(pct, 100) };
-  }, [appointments, weekDays, totalSlotsPerDay, settings.openDaysDefault]);
+  }, [appointments, weekDays, weekStart, weekEnd, totalSlotsPerDay, settings.openDaysDefault]);
 
   // Busiest and emptiest hours today
   const hourInsights = useMemo(() => {

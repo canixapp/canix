@@ -80,7 +80,7 @@ export default function Dashboard() {
         setShowReleaseNotes(true);
       }
     }
-  }, [petshop?.onboarding_completed, petshop?.app_version, petshop?.settings]);
+  }, [petshop?.onboarding_completed, petshop?.app_version, petshop?.settings, petshop]);
 
   const handleCloseReleaseNotes = () => {
     localStorage.setItem('seen_release_version', String(petshop?.app_version || ''));

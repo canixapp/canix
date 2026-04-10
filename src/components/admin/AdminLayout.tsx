@@ -7,9 +7,11 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useSidebarCollapse } from '@/hooks/useSidebarCollapse';
+import { usePetshop } from '@/contexts/PetshopContext';
 
 export function AdminLayout() {
   const { user, logout } = useAuth();
+  const { plan } = usePetshop();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { collapsed, toggle } = useSidebarCollapse();
 
@@ -46,6 +48,19 @@ export function AdminLayout() {
             <span className="text-sm font-medium text-foreground">
               {user?.name} <span className="text-xs text-muted-foreground ml-1 capitalize">({user?.role})</span>
             </span>
+
+            {/* Trial Countdown Indicator */}
+            {plan.name === 'Free (Trial)' && plan.trial_ends_at && (
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-900/30 rounded-full">
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest whitespace-nowrap">
+                  {(() => {
+                    const days = Math.ceil((new Date(plan.trial_ends_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                    return days > 0 ? `${days} dias de teste` : 'Último dia';
+                  })()}
+                </span>
+              </div>
+            )}
             
           </div>
           <div className="flex items-center gap-2">

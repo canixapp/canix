@@ -52,13 +52,25 @@ const HubLicenses = () => {
 
   const stats = [
     { label: "LICENÇAS ATIVAS", value: tenants.filter(t => t.status === 'active').length, icon: CheckCircle2, color: "text-[#2F7FD3]" },
-    { label: "EXPIRANDO EM BREVE", value: "3", icon: Clock, color: "text-[#A13E30]" },
+    { label: "EXPIRANDO EM BREVE", value: tenants.filter(t => {
+      const expiryDate = t.trial_ends_at ? new Date(t.trial_ends_at) : new Date(new Date(t.created_at).getTime() + 30 * 24 * 60 * 60 * 1000);
+      const today = new Date();
+      const in15Days = new Date();
+      in15Days.setDate(today.getDate() + 15);
+      return expiryDate > today && expiryDate < in15Days;
+    }).length, icon: Clock, color: "text-[#A13E30]" },
     { label: "NOVAS (7 DIAS)", value: tenants.filter(t => {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       return new Date(t.created_at) > sevenDaysAgo;
     }).length, icon: Calendar, color: "text-[#63C3D8]" },
   ];
+
+  const formatExpiryDate = (tenant: any) => {
+    if (!tenant.created_at) return "N/A";
+    const date = tenant.trial_ends_at ? new Date(tenant.trial_ends_at) : new Date(new Date(tenant.created_at).getTime() + 30 * 24 * 60 * 60 * 1000);
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
 
   return (
       <div className="space-y-8">
@@ -76,7 +88,7 @@ const HubLicenses = () => {
         </header>
 
         {/* Status Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
           {stats.map((stat, i) => (
             <motion.div
               key={stat.label}
@@ -147,14 +159,14 @@ const HubLicenses = () => {
                   </span>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl">
                     <p className="text-[8px] font-black text-[#6C7A73] uppercase tracking-widest mb-1">Plano</p>
                     <p className="text-xs font-bold flex items-center gap-2"><CreditCard size={12} /> {tenant.plan?.name || 'Standard'}</p>
                   </div>
                   <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl">
                     <p className="text-[8px] font-black text-[#6C7A73] uppercase tracking-widest mb-1">Expiração</p>
-                    <p className="text-xs font-bold">31 Dez, 2024</p>
+                    <p className="text-xs font-bold">{formatExpiryDate(tenant)}</p>
                   </div>
                 </div>
 
@@ -236,7 +248,7 @@ const HubLicenses = () => {
                     </td>
                     <td className="p-6">
                       <div className="flex flex-col">
-                        <span className="font-medium text-sm">31 Dez, 2024</span>
+                        <span className="font-medium text-sm">{formatExpiryDate(tenant)}</span>
                         <span className="text-[10px] text-[#6C7A73] uppercase font-bold tracking-widest">Renovação automática</span>
                       </div>
                     </td>

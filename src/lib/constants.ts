@@ -86,10 +86,25 @@ export interface PetshopSettings {
   // Notification settings
   notification_settings: NotificationSettingsConfig;
 
-  // Inauguration date (ISO string, e.g. "2023-05-13")
+  // Inauguration date
   inauguratedAt: string;
 
-  // Custom service categories (beyond defaults)
+  // Plan info
+  plan?: {
+    id: string;
+    name: string;
+    trial_ends_at?: string;
+    active: boolean;
+  };
+
+  // Owner info
+  owner?: {
+    name: string;
+    email: string;
+    phone?: string;
+  };
+
+  // Custom service categories
   custom_categories?: Array<{
     value: string;
     label: string;

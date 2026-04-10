@@ -1,56 +1,30 @@
-﻿import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePetshop } from '@/contexts/PetshopContext';
 import { useTestModes } from '@/contexts/TestModesContext';
 import { supabase } from '@/lib/supabase';
 
 export function useProAccess() {
   const { user } = useAuth();
+  const { plan } = usePetshop();
   const { proModeActive, basicModeActive } = useTestModes();
-  const [dbIsPro, setDbIsPro] = useState<boolean | null>(null);
   const [simulatedPlan, setSimulatedPlan] = useState<'pro' | 'basic' | null>(null);
 
-  // Fetch real is_pro from user_subscriptions
-  useEffect(() => {
-    if (!user) { setDbIsPro(null); return; }
-
-    const fetch = async () => {
-      const { data } = await supabase
-        .from('user_subscriptions')
-        .select('is_pro')
-        .eq('user_id', user.id)
-        .single();
-      setDbIsPro(data?.is_pro ?? false);
-    };
-    fetch();
-
-    // Realtime updates
-    const channel = supabase
-      .channel('pro-status')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'user_subscriptions',
-        filter: `user_id=eq.${user.id}`,
-      }, (payload: any) => {
-        setDbIsPro(payload.new?.is_pro ?? false);
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [user?.id]);
+  // Removed old user-based subscription fetch for SaaS architecture
 
   const isProActive = useMemo(() => {
-    // DEV test mode overrides
-    if (basicModeActive && user?.role === 'dev') return false;
-    if (proModeActive && user?.role === 'dev') return true;
+    if (user?.role === 'dev') {
+      if (basicModeActive) return false;
+      if (proModeActive) return true;
+      return true;
+    }
+    
     if (simulatedPlan === 'basic') return false;
     if (simulatedPlan === 'pro') return true;
-    if (!user) return false;
-    // DEV always has access
-    if (user.role === 'dev') return true;
-    // For admin/midia: use real DB value
-    return dbIsPro === true;
-  }, [user, dbIsPro, simulatedPlan, proModeActive, basicModeActive]);
+    
+    // SaaS logic: Check petshop plan
+    return plan.name === 'Premium (Avançado)' || plan.name === 'Free (Trial)';
+  }, [user, plan, simulatedPlan, proModeActive, basicModeActive]);
 
   const simulatePlan = useCallback((plan: 'pro' | 'basic' | null) => {
     setSimulatedPlan(plan);
@@ -69,6 +43,6 @@ export function useProAccess() {
 
   return {
     isProActive, canExport, showExportButton,
-    simulatePlan, simulatedPlan, dbIsPro,
+    simulatePlan, simulatedPlan,
   };
 }

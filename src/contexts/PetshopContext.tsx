@@ -7,6 +7,11 @@ interface PetshopContextType {
   loading: boolean;
   settings: PetshopSettings;
   appVersion: string;
+  plan: {
+    name: string;
+    trial_ends_at?: string;
+    active: boolean;
+  };
   refresh: () => Promise<void>;
   updatePetshop: (data: Partial<Omit<Petshop, 'id' | 'settings'>>) => Promise<boolean>;
   updateSettings: (s: Partial<PetshopSettings>) => Promise<boolean>;
@@ -28,6 +33,7 @@ export function PetshopProvider({ children }: { children: ReactNode }) {
 
   const settings = petshop?.settings || DEFAULT_SETTINGS;
   const appVersion = String(petshop?.app_version || "1.0");
+  const plan = settings.plan || { name: 'Free', active: true };
 
   const handleUpdatePetshop = useCallback(async (data: Partial<Omit<Petshop, 'id' | 'settings'>>) => {
     if (!petshop?.id) return false;
@@ -45,7 +51,7 @@ export function PetshopProvider({ children }: { children: ReactNode }) {
 
   return (
     <PetshopContext.Provider value={{
-      petshop, loading, settings, appVersion,
+      petshop, loading, settings, appVersion, plan,
       refresh: load,
       updatePetshop: handleUpdatePetshop,
       updateSettings: handleUpdateSettings,

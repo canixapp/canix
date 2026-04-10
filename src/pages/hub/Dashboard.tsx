@@ -414,7 +414,7 @@ const HubDashboard = () => {
       </header>
 
       {/* PILAR 1: MÉTRICAS PRINCIPAIS (Cards de Topo) */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {/* MRR Principal */}
         <div className="col-span-2 md:col-span-1 bg-gradient-to-br from-[#1E3A8A] to-[#2F7FD3] rounded-3xl p-6 text-white shadow-xl shadow-blue-900/10 flex flex-col justify-between group overflow-hidden relative">
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 blur-[20px] rounded-full group-hover:scale-150 transition-transform duration-700" />

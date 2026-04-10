@@ -41,6 +41,7 @@ const MotionAside = motion.aside;
 
 export function AdminSidebar({ collapsed, onToggle, mobile = false }: AdminSidebarProps) {
   const { user, isDev } = useAuth();
+  const { plan } = usePetshop();
   const { appointments } = useAdmin();
   const { clientModeActive } = useTestModes();
   const { branding } = useBranding();
@@ -147,7 +148,9 @@ export function AdminSidebar({ collapsed, onToggle, mobile = false }: AdminSideb
   const renderProItem = (item: SidebarItem) => {
     if (clientModeActive) return null;
     const Icon = item.icon;
-    const locked = !isProActive;
+    const restrictedPages = ['financeiro', 'relatorios', 'estoque', 'marketing'];
+    const isRestrictedByPlan = plan.name === 'Base (Essencial)' && item.pageKey && restrictedPages.includes(item.pageKey) && user.role !== 'dev';
+    const locked = !isProActive || isRestrictedByPlan;
 
     const content = (
       <button
@@ -184,8 +187,12 @@ export function AdminSidebar({ collapsed, onToggle, mobile = false }: AdminSideb
         </AnimatePresence>
 
         {!isCollapsed && (
-          <span className="ml-auto shrink-0 flex items-center gap-1 text-[10px] font-bold text-amber-500">
-            <Crown className="w-3 h-3" /> PRO
+          <span className={cn(
+            "ml-auto shrink-0 flex items-center gap-1 text-[10px] font-bold uppercase tracking-tighter",
+            locked ? "text-gray-400" : "text-amber-500"
+          )}>
+            {locked ? <Shield size={10} /> : <Crown size={10} />}
+            {locked ? 'Upgrade' : 'PRO'}
           </span>
         )}
       </button>

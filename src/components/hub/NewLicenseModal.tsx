@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Save, ShieldCheck, User, Store, Globe, Sparkles, CreditCard, Phone, Mail } from "lucide-react";
+import { X, Save, ShieldCheck, User, Store, Globe, Sparkles, CreditCard, Phone, Mail, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -12,13 +12,15 @@ interface NewLicenseModalProps {
 
 const NewLicenseModal = ({ isOpen, onClose, onSuccess }: NewLicenseModalProps) => {
   const [loading, setLoading] = useState(false);
+  const [plans, setPlans] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
     owner_name: "",
     owner_email: "",
+    owner_password: "",
     phone: "",
-    plan_id: "Starter"
+    plan_id: ""
   });
 
   // Bloqueio de Scroll do Body (Background) - Reforçado para Drawer
@@ -36,6 +38,25 @@ const NewLicenseModal = ({ isOpen, onClose, onSuccess }: NewLicenseModalProps) =
       document.body.style.paddingRight = '0px';
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchPlans();
+    }
+  }, [isOpen]);
+
+  async function fetchPlans() {
+    try {
+      const { data, error } = await (supabase.from as any)('plans').select('*');
+      if (error) throw error;
+      setPlans(data || []);
+      if (data && data.length > 0 && !formData.plan_id) {
+        setFormData(prev => ({ ...prev, plan_id: data[0].id }));
+      }
+    } catch (error) {
+      console.error('Error fetching plans:', error);
+    }
+  }
 
   // Sugestão automática de Slug (Mágica)
   useEffect(() => {
@@ -59,7 +80,11 @@ const NewLicenseModal = ({ isOpen, onClose, onSuccess }: NewLicenseModalProps) =
       const slug = formData.slug.toLowerCase().trim();
       
       // 1. Criar o Petshop (Tabela operacional)
-      // Definimos onboarding_completed como FALSE para disparar o wizard no dashboard
+      const trialDays = 7;
+      const trialEndsAt = new Date();
+      trialEndsAt.setDate(trialEndsAt.getDate() + trialDays);
+      const selectedPlan = plans.find(p => p.id === formData.plan_id);
+
       const { data: petshopData, error: petshopError } = await supabase
         .from('petshops')
         .insert([{
@@ -67,7 +92,20 @@ const NewLicenseModal = ({ isOpen, onClose, onSuccess }: NewLicenseModalProps) =
           slug: slug,
           phone: formData.phone,
           theme: 'emerald',
-          onboarding_completed: false
+          onboarding_completed: false,
+          settings: {
+            owner: {
+              name: formData.owner_name,
+              email: formData.owner_email,
+              phone: formData.phone
+            },
+            plan: {
+              id: formData.plan_id,
+              name: selectedPlan?.name || 'Trial',
+              trial_ends_at: trialEndsAt.toISOString(),
+              active: true
+            }
+          }
         } as any])
         .select()
         .single();
@@ -82,13 +120,28 @@ const NewLicenseModal = ({ isOpen, onClose, onSuccess }: NewLicenseModalProps) =
           id: petshopId,
           name: formData.name,
           slug: slug,
-          owner_name: formData.owner_name,
-          owner_email: formData.owner_email,
-          plan_id: formData.plan_id,
+          plan_id: formData.plan_id || null,
           status: 'active'
         }]);
 
       if (tenantError) throw tenantError;
+
+      // 3. Criar a Conta de Usuário (Auth) para o Dono
+      const { error: authError } = await supabase.auth.signUp({
+        email: formData.owner_email,
+        password: formData.owner_password,
+        options: {
+          data: {
+            name: formData.owner_name,
+            role: 'admin',
+            petshop_id: petshopId
+          }
+        }
+      });
+
+      if (authError) {
+        console.warn('Auth signup error (maybe email exists):', authError.message);
+      }
 
       toast.success("Licença criada com sucesso!", {
         description: "Redirecionando para o onboarding..."
@@ -229,6 +282,21 @@ const NewLicenseModal = ({ isOpen, onClose, onSuccess }: NewLicenseModalProps) =
                     />
                   </div>
 
+                  {/* Senha Admin */}
+                  <div className="space-y-2.5">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B] ml-1 flex items-center gap-2">
+                      <Lock size={12} className="text-[#2F7FD3]" /> Senha Inicial
+                    </label>
+                    <input
+                      required
+                      type="password"
+                      value={formData.owner_password}
+                      onChange={(e) => setFormData({ ...formData, owner_password: e.target.value })}
+                      placeholder="••••••••"
+                      className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800/40 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none font-medium placeholder:text-gray-400"
+                    />
+                  </div>
+
                   {/* WhatsApp */}
                   <div className="space-y-2.5">
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B] ml-1 flex items-center gap-2">
@@ -254,9 +322,13 @@ const NewLicenseModal = ({ isOpen, onClose, onSuccess }: NewLicenseModalProps) =
                         onChange={(e) => setFormData({ ...formData, plan_id: e.target.value })}
                         className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800/40 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none appearance-none font-black italic tracking-tight"
                       >
-                        <option value="Starter">Starter (R$ 199,00)</option>
-                        <option value="Pro">Pro (R$ 499,00)</option>
-                        <option value="Enterprise">Enterprise (Sob consulta)</option>
+                        {plans.length === 0 ? (
+                           <option value="">Carregando planos…</option>
+                        ) : (
+                          plans.map(plan => (
+                             <option key={plan.id} value={plan.id}>{plan.name} (R$ {plan.price})</option>
+                          ))
+                        )}
                       </select>
                       <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none opacity-40">
                          <Sparkles size={16} />

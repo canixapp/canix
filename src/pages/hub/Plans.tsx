@@ -3,10 +3,12 @@ import { motion } from "framer-motion";
 import { CreditCard, Plus, MoreVertical, CheckCircle2, Sparkles, DollarSign, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import NewPlanModal from "@/components/hub/NewPlanModal";
 
 const HubPlans = () => {
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const primaryGradient = "from-[#1E3A8A] to-[#2F7FD3]";
 
   useEffect(() => {
@@ -41,7 +43,10 @@ const HubPlans = () => {
             <h1 className="text-3xl font-bold tracking-tight text-[#141B2B] dark:text-white">Planos de Assinatura</h1>
             <p className="text-[#6C7A73] mt-1">Configure os modelos de negócio e limites de cada plano.</p>
           </div>
-          <button className={`flex items-center gap-2 px-6 py-3 bg-gradient-to-br ${primaryGradient} text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all transform active:scale-95`}>
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className={`flex items-center gap-2 px-6 py-3 bg-gradient-to-br ${primaryGradient} text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all transform active:scale-95`}
+          >
             <Plus size={20} /> Novo Plano
           </button>
         </header>
@@ -111,7 +116,7 @@ const HubPlans = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <CheckCircle2 size={18} className="text-[#2F7FD3]" />
-                  <span className="text-sm font-medium">Até {plan.max_users || '∞'} usuários admin</span>
+                  <span className="text-sm font-medium">Até {plan.max_appointments_month || '∞'} agendamentos/mês</span>
                 </div>
                 {plan.features?.map((feature: string, idx: number) => (
                    <div key={idx} className="flex items-center gap-3">
@@ -132,6 +137,90 @@ const HubPlans = () => {
             </motion.div>
           ))}
         </div>
+
+        {/* Canix AI Add-on - Ilustrativo */}
+        <div className="mt-16 space-y-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-purple-600">
+               <Sparkles size={20} />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-[#141B2B] dark:text-white">Add-ons & Módulos Extras</h2>
+              <p className="text-xs text-[#6C7A73]">Potencialize sua operação com recursos avançados.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12">
+            <motion.div
+              whileHover={{ y: -5 }}
+              className="bg-white dark:bg-[#141B2B] rounded-[2.5rem] p-8 shadow-sm border border-purple-100 dark:border-purple-900/30 relative overflow-hidden group"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 blur-3xl -mr-16 -mt-16 pointer-events-none" />
+              
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <div className="px-3 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-600 text-[10px] font-black uppercase tracking-[0.2em] rounded-lg inline-block mb-3">
+                    Disponível em breve
+                  </div>
+                  <h3 className="text-2xl font-black text-[#141B2B] dark:text-white italic">Canix <span className="text-purple-600">AI Agent</span></h3>
+                  <p className="text-sm text-[#6C7A73] mt-2 leading-relaxed">Agente inteligente que atende clientes via WhatsApp, sugere horários e auxilia no agendamento.</p>
+                </div>
+                <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-2xl text-purple-600">
+                  <Sparkles size={32} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 text-[#141B2B] dark:text-white">
+                <div className="space-y-4">
+                  <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest flex items-center gap-2">
+                    <span className="w-4 h-[1px] bg-purple-300" /> Modos de Operação
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-[#2F7FD3] flex items-center justify-center shrink-0">
+                      <span className="font-bold text-xs">AI</span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold">Automático</p>
+                      <p className="text-[9px] text-[#6C7A73]">IA atende, agenda e confirma.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-600 flex items-center justify-center shrink-0">
+                      <span className="font-bold text-xs">H</span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold">Assistido</p>
+                      <p className="text-[9px] text-[#6C7A73]">Humano aprova as sugestões da IA.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                   <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest flex items-center gap-2">
+                    <span className="w-4 h-[1px] bg-purple-300" /> Funcionalidades
+                  </p>
+                  <ul className="space-y-2">
+                    {["Atendimento WhatsApp", "Fila de Aprovação", "Insights de Atendimento", "Histórico Completo"].map(f => (
+                      <li key={f} className="flex items-center gap-2 text-xs font-medium">
+                        <CheckCircle2 size={14} className="text-purple-500" /> {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <button className="w-full py-4 bg-gray-50 dark:bg-gray-800 text-[#6C7A73] rounded-2xl font-black uppercase tracking-widest text-[10px] opacity-60 cursor-not-allowed border border-gray-100 dark:border-gray-700">
+                Em desenvolvimento
+              </button>
+            </motion.div>
+          </div>
+        </div>
+
+        <NewPlanModal 
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={fetchPlans}
+        />
       </div>
   );
 };

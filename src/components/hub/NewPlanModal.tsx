@@ -57,7 +57,7 @@ const NewPlanModal = ({ isOpen, onClose, onSuccess }: NewPlanModalProps) => {
       toast.success("Plano criado com sucesso!");
       onSuccess();
       onClose();
-      setFormData({ name: "", price: "", max_pets: "", max_users: "", features: [""] });
+      setFormData({ name: "", price: "", max_pets: "", max_appointments_month: "", features: [""] });
     } catch (error: any) {
       toast.error("Erro ao criar plano", { description: error.message });
     } finally {

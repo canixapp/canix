@@ -113,7 +113,7 @@ const App = () => {
 
                     <Suspense fallback={<RouteFallback />}>
                       <Routes>
-                        {/* Se não houver slug, renderizamos o HUB */}
+                        {/* Se nÃ£o houver slug, renderizamos o HUB */}
                         {!tenantSlug ? (
                           <Route element={<HubErrorBoundary />}>
                             <Route path="/login" element={<HubLogin />} />
@@ -196,7 +196,7 @@ const App = () => {
                               } />
                             </Route>
 
-                            {/* DevTools — standalone layout */}
+                            {/* DevTools â€” standalone layout */}
                             <Route path="/admin/devtools" element={
                               <ProtectedRoute allowedRoles={['dev']}><DevTools /></ProtectedRoute>
                             } />

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import logoPetDefault from '@/assets/logopet.png';
 import { useBranding } from '@/contexts/BrandingContext';
+import { usePetshop } from '@/contexts/PetshopContext';
 import { usePageAccess } from '@/hooks/usePageAccess';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';

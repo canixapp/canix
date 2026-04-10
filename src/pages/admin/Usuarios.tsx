@@ -17,7 +17,7 @@ export default function Usuarios() {
 
   const handleAdd = () => {
     if (!form.name || !form.email || !form.password) return;
-    addAdminUser(form);
+    addAdminUser(form as any);
     setAddOpen(false);
     setForm({ name: '', email: '', password: '', role: 'admin' });
   };
@@ -50,7 +50,7 @@ export default function Usuarios() {
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-foreground">{u.name}</p>
                     <Badge variant={u.role === 'dev' ? 'default' : u.role === 'admin' ? 'secondary' : 'outline'}>
-                      {roleLabel(u.role)}
+                      {roleLabel(u.role as any)}
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">{u.email}</p>

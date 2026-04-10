@@ -15,6 +15,8 @@ export interface ProfileRow {
   lgpd_accepted_at?: string | null;
   created_at: string;
   updated_at: string;
+  role?: string | null;
+  email?: string | null;
   pets?: { id: string; name: string; size?: string; breed?: string }[];
 }
 

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Bell } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUnreadCount } from '@/services/notificationsService';
@@ -15,7 +15,9 @@ export function NotificationBell() {
     try {
       const count = await getUnreadCount(user.id);
       setUnread(count);
-    } catch {}
+    } catch (e) {
+      console.error('Error fetching unread count:', e);
+    }
   }, [user?.id]);
 
   useEffect(() => {

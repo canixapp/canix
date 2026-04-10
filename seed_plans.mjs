@@ -1,8 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 const supabase = createClient(
-  'https://xqscbymvucxfawjwmzpx.supabase.co',
-  'sb_publishable_kt5SqlQTH4vjZGpn7Ak_NQ_F5xqSY2D'
+  process.env.VITE_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 const plans = [

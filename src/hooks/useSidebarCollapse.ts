@@ -14,7 +14,9 @@ export function useSidebarCollapse() {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, String(collapsed));
-    } catch {}
+    } catch (e) {
+      console.error('Error saving sidebar state:', e);
+    }
   }, [collapsed]);
 
   const toggle = useCallback(() => setCollapsed(prev => !prev), []);

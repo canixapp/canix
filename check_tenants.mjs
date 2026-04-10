@@ -1,10 +1,12 @@
-
 import { createClient } from '@supabase/supabase-js';
+import * as dotenv from 'dotenv';
 
-const supabaseUrl = "https://xqscbymvucxfawjwmzpx.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhxc2NieW12dWN4ZmF3andybXpweCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzEzNTQ5MzM3LCJleHAiOjIwMjkxMjUzMzd9.sb_publishable_kt5SqlQTH4vjZGpn7Ak_NQ_F5xqSSY2D"; // I'll use the full key from .env if I can find it, or just the one I found.
+dotenv.config();
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 async function checkTenants() {
   const { data, error } = await supabase.from('tenants').select('*');

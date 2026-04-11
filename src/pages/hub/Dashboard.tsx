@@ -232,6 +232,11 @@ const HubDashboard = () => {
       if (error) throw error;
       
       // Busca dados do Protótipo para o Ciclo de Vida SaaS
+      const { data: proto } = await (supabase.from as any)('petshops')
+        .select('app_version, settings')
+        .eq('slug', 'prototipo')
+        .maybeSingle();
+
       if (proto) {
         const settings = (proto.settings as any) || {};
         

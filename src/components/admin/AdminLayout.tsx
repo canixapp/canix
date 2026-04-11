@@ -8,15 +8,20 @@ import { useState } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useSidebarCollapse } from '@/hooks/useSidebarCollapse';
 import { usePetshop } from '@/contexts/PetshopContext';
+import { WhatIsNewModal } from '../modals/WhatIsNewModal';
 
 export function AdminLayout() {
   const { user, logout } = useAuth();
-  const { plan } = usePetshop();
+  const { plan, appVersion, settings } = usePetshop();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { collapsed, toggle } = useSidebarCollapse();
 
   return (
     <div className="h-screen overflow-hidden bg-background flex">
+      <WhatIsNewModal 
+        version={appVersion} 
+        notes={settings?.last_release_notes || ""} 
+      />
       {/* Desktop sidebar */}
       <div className="animate-fade-in">
         <AdminSidebar collapsed={collapsed} onToggle={toggle} />

@@ -190,6 +190,13 @@ const HubDashboard = () => {
   const [activeBarIndex, setActiveBarIndex] = useState<number | null>(null);
   const [tenantsList, setTenantsList] = useState<any[]>([]);
   const [insightIndex, setInsightIndex] = useState(0);
+  const [saasLifecycle, setSaasLifecycle] = useState({
+    labVersion: __APP_VERSION__,
+    bancoVersion: "...",
+    appVersion: "...",
+    lastLabUpdate: null as string | null,
+    lastAppSync: null as string | null
+  });
 
   // Carousel para Insights
   useEffect(() => {
@@ -223,6 +230,39 @@ const HubDashboard = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      
+      // Busca dados do Protótipo para o Ciclo de Vida SaaS
+      if (proto) {
+        const settings = (proto.settings as any) || {};
+        
+        // 1. Buscar apenas tenants ativos para calcular a frota (Status App)
+        const { data: allPetshops } = await (supabase.from as any)('petshops').select('id, app_version, slug');
+        const activeIds = new Set(allTenants?.filter(t => t.status === 'active').map(t => t.id) || []);
+        
+        const otherTenants = (allPetshops || []).filter((t: any) => 
+          activeIds.has(t.id) && t.slug?.toLowerCase() !== 'prototipo'
+        );
+
+        let commonVersion = "1.0.0";
+        if (otherTenants.length > 0) {
+          const versions = otherTenants.map((t: any) => t.app_version || "1.0.0");
+          const counts = versions.reduce((acc: any, v: string) => {
+            acc[v] = (acc[v] || 0) + 1;
+            return acc;
+          }, {});
+          commonVersion = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+        } else {
+          commonVersion = proto.app_version || "1.0.0";
+        }
+
+        setSaasLifecycle({
+          labVersion: __APP_VERSION__,
+          bancoVersion: proto.app_version || "1.0.0",
+          appVersion: commonVersion,
+          lastLabUpdate: settings.last_lab_update_at || null,
+          lastAppSync: settings.last_app_sync_at || null
+        });
+      }
 
       if (!allTenants) {
         throw new Error("Não foi possível carregar as propriedades do Hub.");
@@ -244,6 +284,18 @@ const HubDashboard = () => {
       const now = new Date();
       const currentMonth = now.getMonth();
       const currentYear = now.getFullYear();
+      
+      const formatAbsoluteDate = (dateStr: string | null) => {
+        if (!dateStr) return "N/A";
+        return new Date(dateStr).toLocaleString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+      };
 
       tenants.forEach((t) => {
         if (!t) return;
@@ -506,6 +558,123 @@ const HubDashboard = () => {
             </div>
             <div className="flex items-baseline gap-2">
               <h3 className="text-3xl font-black text-red-600 dark:text-red-400 leading-none italic">{stats.churn}</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* PILAR 2: CICLO DE VIDA SaaS (NOVO) */}
+      <div className="bg-white dark:bg-[#0D1117] rounded-[2.5rem] p-8 border border-gray-100 dark:border-gray-800 shadow-[0_8px_30px_rgb(0,0,0,0.02)] relative overflow-hidden group">
+        <div className="absolute -right-24 -bottom-24 w-64 h-64 bg-amber-500/5 blur-[80px] rounded-full pointer-events-none group-hover:bg-amber-500/10 transition-colors" />
+        <div className="flex items-center justify-between mb-8 relative z-10">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-900/10 flex items-center justify-center text-amber-500 shadow-inner">
+              <Zap size={22} className="fill-amber-500" />
+            </div>
+            <div>
+              <h3 className="text-xs font-black text-[#1E293B] dark:text-white uppercase tracking-[0.25em] mb-1">
+                Monitoramento de Ciclo de Vida SaaS
+              </h3>
+              <p className="text-[10px] text-[#64748B] dark:text-slate-500 font-bold uppercase tracking-wider">Detalhamento de Versões e Deploys</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => { window.location.href = '/prototype'; }}
+            className="px-6 py-3 bg-gray-50 dark:bg-slate-900 hover:bg-[#2F7FD3] hover:text-white transition-all rounded-xl text-[10px] font-black uppercase tracking-widest text-[#2F7FD3] border border-gray-100 dark:border-slate-800 shadow-sm active:scale-95"
+          >
+            Orquestrar Sincronização →
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+          {/* STATUS LAB CARD */}
+          <div className="bg-gray-50/50 dark:bg-slate-900/30 backdrop-blur-sm p-6 rounded-3xl border border-gray-100 dark:border-slate-800 flex flex-col justify-between group/card transition-all hover:bg-white dark:hover:bg-slate-800/50">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                 <div className="w-2.5 h-2.5 rounded-full bg-[#2F7FD3] animate-pulse ring-4 ring-[#2F7FD3]/10" />
+                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#2F7FD3]">Status Lab</span>
+              </div>
+              <span className="text-[10px] font-black bg-[#2F7FD3] text-white px-3 py-1 rounded-full shadow-lg shadow-blue-500/20">CÓDIGO</span>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-[#64748B] mb-1">Versão em Desenvolvimento</p>
+                <h4 className="text-3xl font-black text-[#1E293B] dark:text-white italic tracking-tighter">v{saasLifecycle.labVersion}</h4>
+              </div>
+              <div className="pt-4 border-t border-gray-100 dark:border-slate-800 grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[8px] font-black uppercase tracking-widest text-[#64748B] mb-1">Última Alteração</p>
+                  <p className="text-[10px] font-bold text-[#1E293B] dark:text-white">
+                    {saasLifecycle.lastLabUpdate ? new Date(saasLifecycle.lastLabUpdate).toLocaleDateString('pt-BR') : 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black uppercase tracking-widest text-[#64748B] mb-1">Horário (UTC-3)</p>
+                  <p className="text-[10px] font-bold text-[#1E293B] dark:text-white">
+                    {saasLifecycle.lastLabUpdate ? new Date(saasLifecycle.lastLabUpdate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* STATUS BANCO CARD */}
+          <div className="bg-gray-50/50 dark:bg-slate-900/30 backdrop-blur-sm p-6 rounded-3xl border border-gray-100 dark:border-slate-800 flex flex-col justify-between group/card transition-all hover:bg-white dark:hover:bg-slate-800/50">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                 <div className="w-2.5 h-2.5 rounded-full bg-amber-500 ring-4 ring-amber-500/10" />
+                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-600 dark:text-amber-500">Status Banco</span>
+              </div>
+              <span className="text-[10px] font-black bg-amber-500 text-white px-3 py-1 rounded-full shadow-lg shadow-amber-500/20">MESTRE</span>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-[#64748B] mb-1">Versão Certificada</p>
+                <h4 className="text-3xl font-black text-[#1E293B] dark:text-white italic tracking-tighter">v{saasLifecycle.bancoVersion}</h4>
+              </div>
+              <div className="pt-4 border-t border-gray-100 dark:border-slate-800 grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[8px] font-black uppercase tracking-widest text-[#64748B] mb-1">Última Promoção</p>
+                  <p className="text-[10px] font-bold text-[#1E293B] dark:text-white">
+                    {saasLifecycle.lastLabUpdate ? new Date(saasLifecycle.lastLabUpdate).toLocaleDateString('pt-BR') : 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black uppercase tracking-widest text-[#64748B] mb-1">Estado</p>
+                  <p className="text-[10px] font-bold text-amber-600">Homologado</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* STATUS APP CARD */}
+          <div className="bg-gray-50/50 dark:bg-slate-900/30 backdrop-blur-sm p-6 rounded-3xl border border-gray-100 dark:border-slate-800 flex flex-col justify-between group/card transition-all hover:bg-white dark:hover:bg-slate-800/50">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-500/10" />
+                 <span className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-500">Status App</span>
+              </div>
+              <span className="text-[10px] font-black bg-emerald-500 text-white px-3 py-1 rounded-full shadow-lg shadow-emerald-500/20">FROTA</span>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-[#64748B] mb-1">Versão das Licenças</p>
+                <h4 className="text-3xl font-black text-[#1E293B] dark:text-white italic tracking-tighter">v{saasLifecycle.appVersion}</h4>
+              </div>
+              <div className="pt-4 border-t border-gray-100 dark:border-slate-800 grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[8px] font-black uppercase tracking-widest text-[#64748B] mb-1">Última Sincronização</p>
+                  <p className="text-[10px] font-bold text-[#1E293B] dark:text-white">
+                    {saasLifecycle.lastAppSync ? new Date(saasLifecycle.lastAppSync).toLocaleDateString('pt-BR') : 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black uppercase tracking-widest text-[#64748B] mb-1">Horário (UTC-3)</p>
+                  <p className="text-[10px] font-bold text-[#1E293B] dark:text-white">
+                    {saasLifecycle.lastAppSync ? new Date(saasLifecycle.lastAppSync).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -10,17 +10,22 @@ import { usePetshop } from "@/contexts/PetshopContext";
 export function useFeatureGate(minVersion: string): boolean {
   const { appVersion, petshop } = usePetshop();
 
-  // O Protótipo sempre tem acesso a todas as funcionalidades (Versão Infinita)
+  // O Protótipo sempre tem acesso a todas as funcionalidades (Modo Lab)
   if (petshop?.slug === 'prototipo') {
     return true;
   }
 
-  // Compara a versão atual da licença com a versão mínima exigida usando parseFloat
-  const hasAccess = parseFloat(appVersion) >= parseFloat(minVersion);
-  
+  // Em desenvolvimento local, também liberamos tudo para agilidade
   if (import.meta.env.DEV) {
-    console.log(`[FeatureGate] Check: ${minVersion} | Current: ${appVersion} | Access: ${hasAccess} | Tenant: ${petshop?.slug}`);
+    return true;
   }
 
+  // Compara a versão atual da licença com a versão mínima exigida
+  // __APP_VERSION__ é injetado pelo Vite baseado no package.json
+  const currentVersion = __APP_VERSION__;
+  
+  // A lógica principal é: a licença do cliente (appVersion no banco) deve ser >= minVersion
+  const hasAccess = parseFloat(appVersion) >= parseFloat(minVersion);
+  
   return hasAccess;
 }

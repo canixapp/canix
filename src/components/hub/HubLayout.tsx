@@ -14,7 +14,8 @@ import {
   Menu,
   X as CloseIcon,
   RefreshCw,
-  ArrowUpRight
+  ArrowUpRight,
+  Info
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -22,6 +23,12 @@ import HubErrorBoundary from "./HubErrorBoundary";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import { useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { 
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider 
+} from "@/components/ui/tooltip";
 
 interface HubLayoutProps {
   children?: React.ReactNode;
@@ -136,6 +143,52 @@ const HubLayout = ({ children }: HubLayoutProps) => {
     setIsNotificationsOpen(false);
     setIsSearchOpen(false);
   }, [location.pathname]);
+
+  const [appVersion, setAppVersion] = useState<string>("...");
+  const [labVersion] = useState<string>(__APP_VERSION__);
+  
+  useEffect(() => {
+    const fetchVersions = async () => {
+      try {
+        const { data: proto } = await supabase.from('petshops')
+          .select('app_version')
+          .eq('slug', 'prototipo')
+          .maybeSingle();
+
+        if (proto?.app_version) {
+          setAppVersion(proto.app_version);
+        } else {
+          setAppVersion("1.0.0");
+        }
+      } catch (e) {
+        console.error("Erro ao buscar versões:", e);
+      }
+    };
+
+    fetchVersions();
+
+    // Inscrição Realtime para manter o header atualizado após syncs
+    const channel = (supabase as any).channel('version-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'petshops',
+          filter: 'slug=eq.prototipo'
+        },
+        (payload: any) => {
+          if (payload.new?.app_version) {
+            setAppVersion(payload.new.app_version);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      (supabase as any).removeChannel(channel);
+    };
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-[#F9F9FF] dark:bg-[#0D1117] transition-colors duration-500 overflow-x-hidden">
@@ -255,9 +308,47 @@ const HubLayout = ({ children }: HubLayoutProps) => {
             >
               <Menu size={20} />
             </button>
-            <div className="hidden sm:block px-3 py-1 bg-blue-50 dark:bg-[#2F7FD3]/10 text-[#2F7FD3] text-[9px] font-bold uppercase tracking-[0.2em] rounded-full border border-[#2F7FD3]/20 whitespace-nowrap overflow-hidden text-ellipsis">
-              Canix Global Hub • v1.0.4
-            </div>
+            <TooltipProvider>
+              <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-1.5 bg-blue-50/50 dark:bg-[#2F7FD3]/5 text-[#2F7FD3]/80 text-[8px] sm:text-[9px] font-semibold uppercase tracking-wider rounded-full border border-[#2F7FD3]/10 whitespace-nowrap">
+                <span className="hidden xs:inline opacity-70">Canix Hub</span>
+                <span className="hidden xs:inline w-1 h-1 rounded-full bg-[#2F7FD3]/20" />
+                
+                 <Tooltip>
+                   <TooltipTrigger asChild>
+                     <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-500/10 dark:bg-blue-500/20 rounded-md border border-blue-500/20 group-hover:border-blue-500/40 transition-colors cursor-help shadow-[0_0_15px_-3px_rgba(59,130,246,0.1)]">
+                       <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse ring-2 ring-blue-500/20" />
+                       <span className="text-[10px] font-black uppercase tracking-widest text-blue-700 dark:text-blue-400">Status Lab</span>
+                       <span className="text-[10px] font-bold text-blue-600/70 dark:text-blue-400/50 ml-1">v{labVersion}</span>
+                       <Info size={10} className="opacity-30 ml-1" />
+                     </div>
+                   </TooltipTrigger>
+                   <TooltipContent side="bottom" className="max-w-[280px] text-[10px] p-3 leading-relaxed z-[200] bg-white dark:bg-[#161B22] border-blue-500/20 shadow-xl rounded-xl">
+                     <p className="font-bold text-blue-500 mb-1">Ambiente de Laboratório</p>
+                     Versão do código em desenvolvimento e teste utilizada para validação de novas funcionalidades.
+                   </TooltipContent>
+                 </Tooltip>
+ 
+                 <span className="w-1 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
+                 
+                 <Tooltip>
+                   <TooltipTrigger asChild>
+                     <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border transition-colors cursor-help shadow-[0_0_15px_-3px_rgba(16,185,129,0.1)] ${appVersion !== labVersion ? "bg-emerald-500/5 border-emerald-500/20" : "bg-emerald-500/10 dark:bg-emerald-500/20 border-emerald-500/20"}`}>
+                       <div className={`w-1.5 h-1.5 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20 ${appVersion !== labVersion ? "animate-bounce" : ""}`} />
+                       <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400">Status App</span>
+                       <span className="text-[10px] font-bold text-emerald-600/70 dark:text-emerald-400/50 ml-1">v{appVersion}</span>
+                       <Info size={10} className="opacity-30 ml-1" />
+                       {appVersion !== labVersion && (
+                         <Zap size={10} className="fill-amber-500 text-amber-500 animate-pulse ml-0.5" />
+                       )}
+                     </div>
+                   </TooltipTrigger>
+                   <TooltipContent side="bottom" className="max-w-[280px] text-[10px] p-3 leading-relaxed z-[200] bg-white dark:bg-[#161B22] border-emerald-500/20 shadow-xl rounded-xl">
+                     <p className="font-bold text-emerald-500 mb-1">Versão de Produção</p>
+                     Estado estável atualmente em uso por todas as licenças dos clientes ativos na frota.
+                   </TooltipContent>
+                 </Tooltip>
+              </div>
+            </TooltipProvider>
           </div>
 
            <div className="flex items-center gap-3 sm:gap-6">
@@ -268,11 +359,9 @@ const HubLayout = ({ children }: HubLayoutProps) => {
              >
                <Search size={20} />
              </button>
-             
-            <ThemeToggle />
-            
-            <div className="relative group hidden xl:block" ref={searchBarRef}>
-              <Search className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isSearchOpen ? 'text-[#2F7FD3]' : 'text-[#6C7A73]'}`} size={16} />
+
+             <div className="relative group hidden xl:block" ref={searchBarRef}>
+               <Search className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isSearchOpen ? 'text-[#2F7FD3]' : 'text-[#6C7A73]'}`} size={16} />
                <input 
                  ref={(el) => { if (el && isSearchOpen) el.focus(); }}
                  placeholder="Pesquisar lojistas ou donos… (Ctrl+K)" 
@@ -357,7 +446,7 @@ const HubLayout = ({ children }: HubLayoutProps) => {
                            })}
                          </div>
                        )}
- 
+  
                        {searchResults.profiles.length > 0 && (
                          <div>
                            <p className="px-3 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#6C7A73]">Proprietários / Contatos</p>
@@ -410,14 +499,15 @@ const HubLayout = ({ children }: HubLayoutProps) => {
                          </button>
                        </div>
                     )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                 </motion.div>
+               )}
+             </AnimatePresence>
             </div>
 
 
             <div className="flex items-center gap-2 sm:gap-4 border-l dark:border-gray-700 pl-3 sm:pl-6">
-              <div className="relative">
+              <ThemeToggle />
+             <div className="relative">
                 <button 
                   onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
                   className="p-2.5 sm:p-3 bg-gray-50 dark:bg-gray-800/50 text-[#141B2B] dark:text-white rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors relative"

@@ -8,33 +8,72 @@ interface NewPlanModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  plan?: any; // Novo: Prop opcional para edição
 }
 
-const NewPlanModal = ({ isOpen, onClose, onSuccess }: NewPlanModalProps) => {
+const MODULES = [
+  { id: 'agendamentos', label: 'Agenda & Horários', category: 'Base' },
+  { id: 'pacotes', label: 'Pacotes de Serviço', category: 'Base' },
+  { id: 'clientes', label: 'Base de Clientes (CRM)', category: 'Base' },
+  { id: 'pets', label: 'Prontuário de Pets', category: 'Base' },
+  { id: 'servicos', label: 'Serviços e Valores', category: 'Base' },
+  { id: 'moderacao', label: 'Galeria e Avaliações', category: 'Base' },
+  { id: 'audit-log', label: 'Registro de Alterações', category: 'Base' },
+  { id: 'financeiro', label: 'Controle Financeiro', category: 'Avançado' },
+  { id: 'estoque', label: 'Gestão de Estoque', category: 'Avançado' },
+  { id: 'relatorios', label: 'Relatórios & BI', category: 'Avançado' },
+  { id: 'lembretes', label: 'Lembretes Inteligentes', category: 'Avançado' },
+  { id: 'marketing', label: 'Marketing & CRM', category: 'Avançado' }
+];
+
+const NewPlanModal = ({ isOpen, onClose, onSuccess, plan }: NewPlanModalProps) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     price: "",
     max_pets: "",
     max_appointments_month: "",
-    features: [""]
+    max_users: "",
+    support_tier: "Standard",
+    max_users: "",
+    support_tier: "Standard",
+    features: [] as string[]
   });
 
-  const handleAddFeature = () => {
-    setFormData(prev => ({ ...prev, features: [...prev.features, ""] }));
-  };
+  useEffect(() => {
+    if (plan) {
+      setFormData({
+        name: plan.name || "",
+        price: plan.price?.toString() || "",
+        max_pets: plan.max_pets?.toString() || "",
+        max_appointments_month: plan.max_appointments_month?.toString() || "",
+        max_users: plan.max_users?.toString() || "",
+        support_tier: plan.support_tier || "Standard",
+        features: Array.isArray(plan.features) ? plan.features : []
+      });
+    } else {
+      setFormData({
+        name: "",
+        price: "",
+        max_pets: "",
+        max_appointments_month: "",
+        max_users: "",
+        support_tier: "Standard",
+        features: []
+      });
+    }
+  }, [plan, isOpen]);
 
-  const handleRemoveFeature = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      features: prev.features.filter((_, i) => i !== index)
-    }));
-  };
-
-  const handleFeatureChange = (index: number, value: string) => {
-    const newFeatures = [...formData.features];
-    newFeatures[index] = value;
-    setFormData(prev => ({ ...prev, features: newFeatures }));
+  const handleToggleModule = (moduleId: string) => {
+    setFormData(prev => {
+      const isSelected = prev.features.includes(moduleId);
+      return {
+        ...prev,
+        features: isSelected 
+          ? prev.features.filter(id => id !== moduleId) 
+          : [...prev.features, moduleId]
+      };
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,22 +81,36 @@ const NewPlanModal = ({ isOpen, onClose, onSuccess }: NewPlanModalProps) => {
     setLoading(true);
 
     try {
-      const { error } = await (supabase.from as any)('plans').insert([{
+      const planData = {
         name: formData.name,
         price: parseFloat(formData.price),
         price_monthly: parseFloat(formData.price),
         max_pets: formData.max_pets ? parseInt(formData.max_pets) : null,
         max_appointments_month: formData.max_appointments_month ? parseInt(formData.max_appointments_month) : null,
+        max_users: formData.max_users ? parseInt(formData.max_users) : null,
+        support_tier: formData.support_tier,
         features: formData.features.filter(f => f.trim() !== ""),
         is_active: true
-      }]);
+      };
 
-      if (error) throw error;
+      if (plan?.id) {
+        const { error } = await supabase
+          .from('plans')
+          .update(planData)
+          .eq('id', plan.id);
+        if (error) throw error;
+        toast.success("Plano atualizado com sucesso!");
+      } else {
+        const { error } = await supabase
+          .from('plans')
+          .insert([planData]);
+        if (error) throw error;
+        toast.success("Plano criado com sucesso!");
+      }
 
-      toast.success("Plano criado com sucesso!");
       onSuccess();
       onClose();
-      setFormData({ name: "", price: "", max_pets: "", max_appointments_month: "", features: [""] });
+      setFormData({ name: "", price: "", max_pets: "", max_appointments_month: "", max_users: "", support_tier: "Standard", features: [] });
     } catch (error: any) {
       toast.error("Erro ao criar plano", { description: error.message });
     } finally {
@@ -93,7 +146,9 @@ const NewPlanModal = ({ isOpen, onClose, onSuccess }: NewPlanModalProps) => {
                   <Sparkles size={14} />
                   <span className="text-[10px] font-black uppercase tracking-[0.2em] leading-none">Canix Hub Business</span>
                 </div>
-                <h2 className="text-2xl font-black tracking-tight dark:text-white leading-tight italic">Novo Plano Comercial</h2>
+                <h2 className="text-2xl font-black tracking-tight dark:text-white leading-tight italic">
+                  {plan ? "Editar Plano Comercial" : "Novo Plano Comercial"}
+                </h2>
               </div>
               <button 
                 onClick={onClose}
@@ -158,39 +213,72 @@ const NewPlanModal = ({ isOpen, onClose, onSuccess }: NewPlanModalProps) => {
                     className="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-800/40 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none font-medium"
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[#64748B] ml-2 flex items-center gap-2">
+                    <Shield size={12} className="text-[#2F7FD3]" /> Limite Usuários
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.max_users}
+                    onChange={(e) => setFormData({ ...formData, max_users: e.target.value })}
+                    placeholder="10 (opcional)"
+                    className="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-800/40 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none font-medium"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-[#64748B] ml-2 flex items-center gap-2">
+                    <Sparkles size={12} className="text-[#2F7FD3]" /> Nível de Suporte
+                  </label>
+                  <select
+                    value={formData.support_tier}
+                    onChange={(e) => setFormData({ ...formData, support_tier: e.target.value })}
+                    className="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-800/40 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none font-medium appearance-none"
+                  >
+                    <option value="Standard">Standard (Ticket)</option>
+                    <option value="Priority">Priority (Chat)</option>
+                    <option value="Dedicated">Dedicated (Manager)</option>
+                  </select>
+                </div>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex justify-between items-center px-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[#64748B] flex items-center gap-2">
-                    <List size={12} className="text-[#2F7FD3]" /> Funcionalidades Inclusas
-                  </label>
-                  <button 
-                    type="button"
-                    onClick={handleAddFeature}
-                    className="text-[10px] font-black text-[#2F7FD3] uppercase tracking-widest hover:underline"
-                  >
-                    + Adicionar
-                  </button>
-                </div>
-                <div className="space-y-2">
-                  {formData.features.map((feature, index) => (
-                    <div key={index} className="flex gap-2">
-                      <input
-                        value={feature}
-                        onChange={(e) => handleFeatureChange(index, e.target.value)}
-                        placeholder={`Funcionalidade ${index + 1}`}
-                        className="flex-1 px-5 py-3 bg-gray-50 dark:bg-gray-800/40 border-none rounded-xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none text-sm"
-                      />
-                      {formData.features.length > 1 && (
-                        <button 
-                          type="button"
-                          onClick={() => handleRemoveFeature(index)}
-                          className="p-3 text-red-400 hover:text-red-500 transition-colors"
-                        >
-                          <X size={18} />
-                        </button>
-                      )}
+              <div className="space-y-4">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[#64748B] ml-2 flex items-center gap-2">
+                  <List size={12} className="text-[#2F7FD3]" /> Configuração de Módulos (Gated)
+                </label>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {['Base', 'Avançado'].map(category => (
+                    <div key={category} className="space-y-3">
+                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter px-2">{category}</p>
+                      <div className="space-y-2">
+                        {MODULES.filter(m => m.category === category).map(module => (
+                          <label 
+                            key={module.id}
+                            className={`flex items-center gap-3 p-3 rounded-2xl cursor-pointer border transition-all ${
+                              formData.features.includes(module.id)
+                                ? 'bg-blue-50/50 dark:bg-blue-600/10 border-blue-200 dark:border-blue-900/40 text-[#2F7FD3]' 
+                                : 'bg-gray-50/50 dark:bg-gray-800/30 border-transparent text-gray-400 opacity-60'
+                            }`}
+                          >
+                            <input 
+                              type="checkbox"
+                              className="hidden"
+                              checked={formData.features.includes(module.id)}
+                              onChange={() => handleToggleModule(module.id)}
+                            />
+                            {formData.features.includes(module.id) ? (
+                              <div className="w-4 h-4 bg-[#2F7FD3] rounded-md flex items-center justify-center">
+                                <CheckCircle2 size={10} className="text-white" />
+                              </div>
+                            ) : (
+                              <div className="w-4 h-4 rounded-md border-2 border-gray-300 dark:border-gray-700" />
+                            )}
+                            <span className="text-[11px] font-black uppercase tracking-tight">{module.label}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -208,7 +296,7 @@ const NewPlanModal = ({ isOpen, onClose, onSuccess }: NewPlanModalProps) => {
                 ) : (
                   <>
                     <Save size={18} />
-                    <span>Criar Plano Comercial</span>
+                    <span>{plan ? "Salvar Alterações" : "Criar Plano Comercial"}</span>
                   </>
                 )}
               </button>

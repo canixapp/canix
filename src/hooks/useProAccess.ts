@@ -22,8 +22,9 @@ export function useProAccess() {
     if (simulatedPlan === 'basic') return false;
     if (simulatedPlan === 'pro') return true;
     
-    // SaaS logic: Check petshop plan
-    return plan.name === 'Premium (Avançado)' || plan.name === 'Free (Trial)';
+    // SaaS logic: Check petshop plan features
+    const premiumModules = ['financeiro', 'estoque', 'relatorios', 'lembretes', 'marketing'];
+    return plan.features?.some(f => premiumModules.includes(f)) || plan.name === 'Free (Trial)';
   }, [user, plan, simulatedPlan, proModeActive, basicModeActive]);
 
   const simulatePlan = useCallback((plan: 'pro' | 'basic' | null) => {

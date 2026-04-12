@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { cn } from "@/lib/utils";
 import { 
   ExternalLink, 
   CheckCircle2, 
@@ -50,6 +51,11 @@ const HubPrototype = () => {
   const [currentMasterVersion, setCurrentMasterVersion] = useState("");
   const [currentFrotaVersion, setCurrentFrotaVersion] = useState("1.0.0");
   
+  // Detecção de Código Sujo (Dirty Version)
+  // @ts-ignore - __CODE_FINGERPRINT__ é injetado pelo Vite. Se estiver undefined, o servidor precisa reiniciar.
+  const currentCodeFingerprint = typeof __CODE_FINGERPRINT__ !== 'undefined' ? __CODE_FINGERPRINT__ : null;
+  const [dbFingerprint, setDbFingerprint] = useState("");
+  
   // Modals state
   const [isPreviewActive, setIsPreviewActive] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -58,7 +64,22 @@ const HubPrototype = () => {
   const [releaseNotes, setReleaseNotes] = useState("");
   const [isTestModalOpen, setIsTestModalOpen] = useState(false);
 
-  const needsUpdate = codeVersion !== currentMasterVersion;
+  // Lógica de Diagnóstico de Laboratório (Readiness Score)
+  const isDirty = currentCodeFingerprint && codeVersion === currentMasterVersion && currentCodeFingerprint !== dbFingerprint;
+  const isVersionBumped = parseFloat(codeVersion) > parseFloat(currentMasterVersion);
+  const hasReleaseNotes = releaseNotes && releaseNotes.trim().length > 10;
+  
+  const readinessScore = React.useMemo(() => {
+    let score = 0;
+    if (!isDirty && currentCodeFingerprint) score += 33;
+    if (isVersionBumped) score += 33;
+    if (hasReleaseNotes) score += 34;
+    return Math.min(100, score);
+  }, [isDirty, currentCodeFingerprint, isVersionBumped, hasReleaseNotes]);
+
+  const needsUpdate = codeVersion !== currentMasterVersion || isDirty;
+  const isStable = readinessScore === 33 && !needsUpdate;
+  const isFingerprintMissing = currentCodeFingerprint === null;
 
   useEffect(() => {
     if (isReleaseNotesModalOpen || isPasswordModalOpen) {
@@ -93,6 +114,9 @@ const HubPrototype = () => {
         setPrototypeData(petshop);
         const dbVersion = (petshop as any).app_version || "1.0.0";
         setCurrentMasterVersion(dbVersion);
+
+        const settings = (petshop.settings as any) || {};
+        setDbFingerprint(settings.last_code_fingerprint || "");
         
         // Se a versão do código for maior, sugerimos ela
         if (parseFloat(codeVersion) > parseFloat(dbVersion)) {
@@ -142,7 +166,6 @@ const HubPrototype = () => {
           adoption: activeCount > 0 ? Math.round((upToDateCount / activeCount) * 100) : 100
         });
 
-        const settings = (petshop.settings as any) || {};
         if (settings.last_release_notes) {
           setReleaseNotes(settings.last_release_notes);
         }
@@ -178,12 +201,12 @@ const HubPrototype = () => {
          app_version: codeVersion,
          settings: {
            ...settings,
-           last_app_sync_at: new Date().toISOString(),
-           ...(isMajorChange(currentMasterVersion, codeVersion) ? { last_release_notes: releaseNotes } : {})
+            last_app_sync_at: new Date().toISOString(),
+            last_code_fingerprint: currentCodeFingerprint,
+            ...(isMajorChange(currentMasterVersion, codeVersion) ? { last_release_notes: releaseNotes } : {})
          }
       } as any).eq('id', prototypeData.id);
 
-      // 2. Propagar para todos os tenants ativos
       const { data: tenants, error: tError } = await (supabase.from as any)('tenants')
         .select('id, slug')
         .eq('status', 'active')
@@ -197,7 +220,6 @@ const HubPrototype = () => {
         try {
           const targetPetshopId = tenant.id;
 
-          // Busca as configurações atuais do petshop para não sobrescrevê-las
           const { data: pData } = await supabase.from('petshops').select('settings').eq('id', targetPetshopId).single();
           const pSettings = (pData?.settings as any) || {};
 
@@ -236,8 +258,9 @@ const HubPrototype = () => {
          app_version: codeVersion,
          settings: {
            ...settings,
-           last_lab_update_at: new Date().toISOString(),
-           ...(isMajorChange(currentMasterVersion, codeVersion) 
+            last_lab_update_at: new Date().toISOString(),
+            last_code_fingerprint: currentCodeFingerprint,
+            ...(isMajorChange(currentMasterVersion, codeVersion) 
              ? { last_release_notes: releaseNotes }
              : {})
          }
@@ -297,16 +320,48 @@ const HubPrototype = () => {
             exit={{ height: 0, opacity: 0, y: -10 }}
             className="overflow-hidden mb-6 flex justify-center"
           >
-            <div className="inline-flex items-center gap-3 p-2 px-6 rounded-full bg-amber-500/10 border border-amber-500/20 shadow-sm">
-                <div className="p-1.5 rounded-full bg-amber-500/20 text-amber-500 shrink-0">
+            <div className={cn(
+              "inline-flex items-center gap-3 p-2 px-6 rounded-full shadow-sm border",
+              isDirty 
+                ? "bg-red-500/10 border-red-500/20" 
+                : "bg-amber-500/10 border-amber-500/20"
+            )}>
+                <div className={cn(
+                  "p-1.5 rounded-full shrink-0",
+                  isDirty ? "bg-red-500/20 text-red-500" : "bg-amber-500/20 text-amber-500"
+                )}>
                   <AlertTriangle size={14} />
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                  <p className="text-[11px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-400">Novo Código Detectado: v{codeVersion}</p>
-                  <span className="hidden sm:block w-1 h-1 rounded-full bg-amber-500/30" />
-                  <p className="text-[10px] font-bold text-amber-600/70 dark:text-amber-400/50 uppercase tracking-wider">Banco desatualizado (v{currentMasterVersion})</p>
+                  <p className={cn(
+                    "text-[11px] font-black uppercase tracking-widest",
+                    isDirty ? "text-red-700 dark:text-red-400" : "text-amber-700 dark:text-amber-400"
+                  )}>
+                    {isDirty ? "CÓDIGO ALTERADO (DIRTY)" : `Novo Código Detectado: v${codeVersion}`}
+                  </p>
+                  <span className={cn(
+                    "hidden sm:block w-1 h-1 rounded-full",
+                    isDirty ? "bg-red-500/30" : "bg-amber-500/30"
+                  )} />
+                  <p className={cn(
+                    "text-[10px] font-bold uppercase tracking-wider",
+                    isDirty ? "text-red-600/70 dark:text-red-400/50" : "text-amber-600/70 dark:text-amber-400/50"
+                  )}>
+                    {isDirty ? "A versão é v2.1.0 mas o conteúdo mudou. Suba a versão no package.json!" : isFingerprintMissing ? "Servidor precisa ser reiniciado para ativar sensor de integridade." : `Banco desatualizado (v${currentMasterVersion})`}
+                  </p>
                 </div>
             </div>
+          </motion.div>
+        )}
+
+        {isFingerprintMissing && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-600 text-xs flex items-center gap-3"
+          >
+            <Info size={16} />
+            <p><strong>Dica Técnica:</strong> Como alteramos o arquivo de configuração, você precisa <strong>reiniciar o comando npm run dev</strong> para ativar o Sensor de Código Sujo.</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -330,42 +385,134 @@ const HubPrototype = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <Card className="lg:col-span-1 rounded-[2.5rem] border-none shadow-sm bg-white dark:bg-[#161B22] flex flex-col">
           <CardContent className="p-8 flex-1 flex flex-col">
-            <h3 className="text-sm font-bold mb-6 flex items-center gap-2 text-gray-400">
-              <ArrowUpCircle size={18} /> ADOÇÃO DE VERSÃO
+            <h3 className="text-[10px] font-black mb-6 flex items-center justify-between text-gray-400 tracking-[0.2em] uppercase">
+              <span className="flex items-center gap-2">
+                <Settings2 size={14} /> DIAGNÓSTICO DO LAB
+              </span>
+              <Badge variant="outline" className="border-gray-200 text-[9px] font-bold">PROTÓTIPO</Badge>
             </h3>
 
-            <div className="flex-1 flex flex-col items-center justify-center py-10">
-               <div className="relative w-44 h-44 flex items-center justify-center">
-                  <svg className="w-full h-full transform -rotate-90">
-                    <circle cx="88" cy="88" r="75" stroke="currentColor" strokeWidth="14" fill="transparent" className="text-gray-100 dark:text-gray-800" />
-                    <circle cx="88" cy="88" r="75" stroke="currentColor" strokeWidth="14" fill="transparent" strokeDasharray={471} strokeDashoffset={471 - (471 * stats.adoption) / 100} className="text-[#2F7FD3] transition-all duration-1000 ease-out" strokeLinecap="round" />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-5xl font-black tracking-tighter">{stats.adoption}%</span>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Upgrade Rate</span>
-                  </div>
-               </div>
+            <div className="flex-1 flex flex-col items-center justify-center py-6">
+               <AnimatePresence mode="wait">
+                 {isStable ? (
+                   <motion.div 
+                     key="stable"
+                     initial={{ opacity: 0, scale: 0.8 }}
+                     animate={{ opacity: 1, scale: 1 }}
+                     exit={{ opacity: 0, scale: 0.8 }}
+                     className="flex flex-col items-center justify-center text-emerald-500"
+                   >
+                     <div className="relative">
+                       <motion.div 
+                         animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
+                         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                         className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full"
+                       />
+                       <ShieldCheck size={80} strokeWidth={1.5} className="relative z-10" />
+                     </div>
+                     <span className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.3em] mt-6 bg-emerald-500/10 px-4 py-1.5 rounded-full border border-emerald-500/20">
+                       Sistema Estável
+                     </span>
+                     <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-2">EM REPOUSO</span>
+                   </motion.div>
+                 ) : (
+                   <motion.div 
+                     key="ready"
+                     initial={{ opacity: 0, scale: 0.8 }}
+                     animate={{ opacity: 1, scale: 1 }}
+                     exit={{ opacity: 0, scale: 0.8 }}
+                     className="relative w-40 h-40 flex items-center justify-center"
+                   >
+                      <svg className="w-full h-full transform -rotate-90">
+                        <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-gray-100 dark:text-gray-800" />
+                        <circle 
+                          cx="80" cy="80" r="70" 
+                          stroke="currentColor" strokeWidth="12" 
+                          fill="transparent" 
+                          strokeDasharray={440} 
+                          strokeDashoffset={440 - (440 * readinessScore) / 100} 
+                          className={cn(
+                            "transition-all duration-1000 ease-out",
+                            readinessScore === 100 ? "text-emerald-500" : readinessScore >= 66 ? "text-amber-500" : "text-rose-500"
+                          )}
+                          strokeLinecap="round" 
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-4xl font-black tracking-tighter">{readinessScore}%</span>
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">PRONTIDÃO</span>
+                      </div>
+                   </motion.div>
+                 )}
+               </AnimatePresence>
             </div>
 
-            <div className="mt-8 space-y-4">
-              <div className="flex justify-between items-center text-sm p-4 bg-gray-50 dark:bg-gray-800/50 rounded-[1.5rem]">
-                 <span className="text-gray-500 font-bold uppercase text-[10px]">CÓDIGO (package.json)</span>
-                 <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-black text-[10px]">
-                   v{codeVersion}
-                 </Badge>
-              </div>
-              <div className="flex justify-between items-center text-sm p-4 bg-gray-50 dark:bg-gray-800/50 rounded-[1.5rem]">
-                 <span className="text-gray-500 font-bold uppercase text-[10px]">PROTÓTIPO (DB)</span>
-                 <Badge 
-                   onClick={() => setIsReleaseNotesModalOpen(true)}
-                   className={cn("border-none font-bold cursor-pointer transition-colors", needsUpdate ? "bg-amber-500/10 text-amber-600" : "bg-[#E0F2FE] text-[#1E3A8A]")}
-                 >
-                   v{currentMasterVersion}
-                 </Badge>
-              </div>
-              <div className="flex justify-between items-center text-sm p-4 bg-gray-50 dark:bg-gray-800/50 rounded-[1.5rem]">
-                 <span className="text-gray-500 font-bold uppercase text-[10px]">Licenças Ativas</span>
-                 <span className="font-bold text-[#1E3A8A]">{(stats as any).active}</span>
+            <div className="mt-8 space-y-3">
+              <TooltipProvider>
+                {/* Check 1: Lacre */}
+                <div className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-800/40 rounded-2xl border border-transparent">
+                  <div className="flex items-center gap-2">
+                    <div className={cn("w-2 h-2 rounded-full", !isDirty && currentCodeFingerprint ? "bg-emerald-500" : "bg-rose-500")} />
+                    <span className="text-[10px] font-bold text-gray-500 uppercase">Integridade do Lacre</span>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info size={12} className="text-gray-300 hover:text-[#2F7FD3] cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-[240px] text-[11px] p-3 leading-relaxed shadow-xl border-none bg-white dark:bg-[#1C2128]">
+                        {!currentCodeFingerprint 
+                          ? "O sensor de segurança (Fingerprint) não foi detectado. Dica: Reinicie o servidor de desenvolvimento para recalcular o lacre."
+                          : "O 'Lacre' é o DNA único do seu código. Se você mexer em qualquer arquivo, o lacre quebra para evitar deploys não-intencionais."}
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  {(!isDirty && currentCodeFingerprint) ? <CheckCircle2 size={16} className="text-emerald-500" /> : <ShieldAlert size={16} className="text-rose-500" />}
+                </div>
+
+                {/* Check 2: Versão */}
+                <div className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-800/40 rounded-2xl">
+                  <div className="flex items-center gap-2">
+                    <div className={cn("w-2 h-2 rounded-full", isVersionBumped ? "bg-emerald-500" : "bg-amber-500")} />
+                    <span className="text-[10px] font-bold text-gray-500 uppercase">Nova Versão Detectada</span>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info size={12} className="text-gray-300 hover:text-[#2F7FD3] cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-[240px] text-[11px] p-3 leading-relaxed shadow-xl border-none bg-white dark:bg-[#1C2128]">
+                        Para lançar um novo boletim de atualização, a versão atual (v{codeVersion}) deve ser inédita. 
+                        Dica: Use o comando <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">npm version patch</code> para subir a versão.
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  {isVersionBumped ? <CheckCircle2 size={16} className="text-emerald-500" /> : <RefreshCw size={16} className="text-amber-500 animate-spin-slow" />}
+                </div>
+
+                {/* Check 3: Notas */}
+                <div className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-800/40 rounded-2xl">
+                  <div className="flex items-center gap-2">
+                    <div className={cn("w-2 h-2 rounded-full", hasReleaseNotes ? "bg-emerald-500" : "bg-gray-300")} />
+                    <span className="text-[10px] font-bold text-gray-500 uppercase">Documentação do Lançamento</span>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info size={12} className="text-gray-300 hover:text-[#2F7FD3] cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-[240px] text-[11px] p-3 leading-relaxed shadow-xl border-none bg-white dark:bg-[#1C2128]">
+                        O 'Build' profissional exige que as notas de release estejam preenchidas, informando aos clientes o que mudou na frota.
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  {hasReleaseNotes ? <CheckCircle2 size={16} className="text-emerald-500" /> : <div className="w-4 h-1 bg-gray-200 rounded-full" />}
+                </div>
+              </TooltipProvider>
+
+              <div className="pt-4 mt-4 border-t border-gray-100 dark:border-gray-800">
+                <div className="flex justify-between items-center text-[9px] mb-2 px-2">
+                   <span className="text-gray-400 font-bold uppercase tracking-widest">Master Target (DB)</span>
+                   <span className="text-[#2F7FD3] font-black italic">v{currentMasterVersion}</span>
+                </div>
+                <div className="flex justify-between items-center text-[9px] px-2">
+                   <span className="text-gray-400 font-bold uppercase tracking-widest">Local Build (App)</span>
+                   <span className="text-emerald-500 font-black italic">v{codeVersion}</span>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -426,7 +573,24 @@ const HubPrototype = () => {
                          <div className="flex items-center gap-6 bg-gray-50 dark:bg-gray-800/40 px-6 py-4 rounded-3xl border border-gray-100 dark:border-gray-800/50">
                             <div className="text-center">
                               <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Status Lab</p>
-                              <p className="text-lg font-black font-mono text-[#2F7FD3]">v{codeVersion}</p>
+                              <div className="flex items-center gap-1.5">
+                                <p className={cn(
+                                  "text-lg font-black font-mono",
+                                  isDirty ? "text-red-500 animate-pulse" : "text-[#2F7FD3]"
+                                )}>v{codeVersion}</p>
+                                {isDirty && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
+                                      </TooltipTrigger>
+                                      <TooltipContent className="text-[10px] bg-red-600 text-white border-none py-1.5 px-3">
+                                        Mudanças não versionadas detectadas
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                              </div>
                             </div>
                             <div className="h-8 w-px bg-gray-200 dark:bg-gray-700 mx-2" />
                             <div className="text-center">
@@ -690,6 +854,38 @@ const HubPrototype = () => {
               >
                 Autorizar Propagação
               </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="w-full">
+                    <Button 
+                      size="lg"
+                      disabled={loading || readinessScore < 100}
+                      onClick={() => setIsPasswordModalOpen(true)}
+                      className={cn(
+                        "w-full h-16 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg transition-all transform active:scale-95 group relative overflow-hidden",
+                        readinessScore < 100 
+                          ? "bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed border border-gray-200 dark:border-gray-700 shadow-none grayscale opacity-60" 
+                          : "bg-gradient-to-br from-[#1E3A8A] to-[#2F7FD3] text-white hover:scale-[1.02] hover:shadow-blue-500/25"
+                      )}
+                    >
+                      <Rocket className={cn("mr-3 transition-transform group-hover:-translate-y-1 group-hover:translate-x-1", readinessScore === 100 && "text-blue-200")} size={20} />
+                      {readinessScore < 100 ? "Prontidão Necessária" : "Lançar para toda a frota"}
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                {readinessScore < 100 && (
+                  <TooltipContent className="bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-200 border-amber-200/50 p-4 rounded-xl text-[10px] space-y-2 max-w-[280px]">
+                    <p className="font-black uppercase tracking-widest">Atenção Admin:</p>
+                    <p className="leading-relaxed opacity-90">
+                      {isStable 
+                        ? "A frota já está operando na versão mais recente detectada. Nenhuma ação pendente no momento."
+                        : "Existem pendências no Diagnóstico do Lab. Siga o checklist para liberar o lançamento."}
+                    </p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
               <button 
                 onClick={() => setIsPasswordModalOpen(false)}
                 className="text-[#64748B] text-[10px] font-black uppercase tracking-widest hover:text-[#1E293B] transition-colors"
@@ -816,9 +1012,5 @@ const HoldToSyncButton = ({ onComplete, disabled, loading, label }: any) => {
   );
 };
 
-// Função auxiliar para Tailwind (opcional, dependendo do setup)
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(' ');
-}
 
 export default HubPrototype;

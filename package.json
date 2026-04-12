@@ -1,7 +1,7 @@
 {
   "name": "projeto-canix",
   "private": true,
-  "version": "2.0.1",
+  "version": "2.1.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "release": "npm version patch && git add . && git commit -m 'new release' && git push"
   },
   "dependencies": {
     "@dnd-kit/sortable": "^10.0.0",

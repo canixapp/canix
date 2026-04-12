@@ -51,9 +51,9 @@ const HubPrototype = () => {
   const [currentMasterVersion, setCurrentMasterVersion] = useState("");
   const [currentFrotaVersion, setCurrentFrotaVersion] = useState("1.0.0");
   
-  // Detecção de Código Sujo (Dirty Version)
-  // @ts-ignore - __CODE_FINGERPRINT__ é injetado pelo Vite. Se estiver undefined, o servidor precisa reiniciar.
-  const currentCodeFingerprint = typeof __CODE_FINGERPRINT__ !== 'undefined' ? __CODE_FINGERPRINT__ : null;
+  // Detecção de Código Sujo (Dirty Version) - Focado apenas no APP (ignora HUB)
+  // @ts-ignore - __APP_FINGERPRINT__ é injetado pelo Vite. 
+  const currentAppFingerprint = typeof __APP_FINGERPRINT__ !== 'undefined' ? __APP_FINGERPRINT__ : null;
   const [dbFingerprint, setDbFingerprint] = useState("");
   
   // Modals state
@@ -64,22 +64,22 @@ const HubPrototype = () => {
   const [releaseNotes, setReleaseNotes] = useState("");
   const [isTestModalOpen, setIsTestModalOpen] = useState(false);
 
-  // Lógica de Diagnóstico de Laboratório (Readiness Score)
-  const isDirty = currentCodeFingerprint && codeVersion === currentMasterVersion && currentCodeFingerprint !== dbFingerprint;
+   // Lógica de Diagnóstico de Laboratório (Readiness Score) - Agora focada 100% no APP SaaS
+  const isDirty = currentAppFingerprint && codeVersion === currentMasterVersion && currentAppFingerprint !== dbFingerprint;
   const isVersionBumped = parseFloat(codeVersion) > parseFloat(currentMasterVersion);
   const hasReleaseNotes = releaseNotes && releaseNotes.trim().length > 10;
   
   const readinessScore = React.useMemo(() => {
     let score = 0;
-    if (!isDirty && currentCodeFingerprint) score += 33;
+    if (!isDirty && currentAppFingerprint) score += 33;
     if (isVersionBumped) score += 33;
     if (hasReleaseNotes) score += 34;
     return Math.min(100, score);
-  }, [isDirty, currentCodeFingerprint, isVersionBumped, hasReleaseNotes]);
+  }, [isDirty, currentAppFingerprint, isVersionBumped, hasReleaseNotes]);
 
   const needsUpdate = codeVersion !== currentMasterVersion || isDirty;
   const isStable = readinessScore === 33 && !needsUpdate;
-  const isFingerprintMissing = currentCodeFingerprint === null;
+  const isFingerprintMissing = currentAppFingerprint === null;
 
   useEffect(() => {
     if (isReleaseNotesModalOpen || isPasswordModalOpen) {
@@ -452,20 +452,20 @@ const HubPrototype = () => {
                 {/* Check 1: Lacre */}
                 <div className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-800/40 rounded-2xl border border-transparent">
                   <div className="flex items-center gap-2">
-                    <div className={cn("w-2 h-2 rounded-full", !isDirty && currentCodeFingerprint ? "bg-emerald-500" : "bg-rose-500")} />
-                    <span className="text-[10px] font-bold text-gray-500 uppercase">Integridade do Lacre</span>
+                    <div className={cn("w-2 h-2 rounded-full", !isDirty && currentAppFingerprint ? "bg-emerald-500" : "bg-rose-500")} />
+                    <span className="text-[10px] font-bold text-gray-500 uppercase italic tracking-tighter">Lacre do SaaS App</span>
                     <Tooltip>
                       <TooltipTrigger>
                         <Info size={12} className="text-gray-300 hover:text-[#2F7FD3] cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-[240px] text-[11px] p-3 leading-relaxed shadow-xl border-none bg-white dark:bg-[#1C2128]">
-                        {!currentCodeFingerprint 
-                          ? "O sensor de segurança (Fingerprint) não foi detectado. Dica: Reinicie o servidor de desenvolvimento para recalcular o lacre."
-                          : "O 'Lacre' é o DNA único do seu código. Se você mexer em qualquer arquivo, o lacre quebra para evitar deploys não-intencionais."}
+                        {!currentAppFingerprint 
+                          ? "O sensor de segurança do SaaS não foi detectado. Dica: Reinicie o servidor de desenvolvimento."
+                          : "Este sensor monitora apenas o código do seu aplicativo (exclui o Hub Admin). Se o Lacre quebrar, significa que você mexeu no App que os clientes usam."}
                       </TooltipContent>
                     </Tooltip>
                   </div>
-                  {(!isDirty && currentCodeFingerprint) ? <CheckCircle2 size={16} className="text-emerald-500" /> : <ShieldAlert size={16} className="text-rose-500" />}
+                  {(!isDirty && currentAppFingerprint) ? <CheckCircle2 size={16} className="text-emerald-500" /> : <ShieldAlert size={16} className="text-rose-500" />}
                 </div>
 
                 {/* Check 2: Versão */}

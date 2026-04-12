@@ -11,7 +11,7 @@ interface NewPlanModalProps {
   plan?: any; // Novo: Prop opcional para edição
 }
 
-const MODULES = [
+export const MODULES = [
   { id: 'agendamentos', label: 'Agenda & Horários', category: 'Base' },
   { id: 'pacotes', label: 'Pacotes de Serviço', category: 'Base' },
   { id: 'clientes', label: 'Base de Clientes (CRM)', category: 'Base' },

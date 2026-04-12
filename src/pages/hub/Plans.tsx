@@ -22,14 +22,31 @@ import {
   Users,
   Headset,
   Layout,
-  Activity
+  Activity,
+  ArrowRight,
+  Save,
+  Lock,
+  Zap,
+  RefreshCw
 } from "lucide-react";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { MODULES } from "@/components/hub/NewPlanModal";
 
 const HubPlans = () => {
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<any>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
   const primaryGradient = "from-[#1E3A8A] to-[#2F7FD3]";
 
   useEffect(() => {
@@ -76,6 +93,31 @@ const HubPlans = () => {
     { label: "PREÇO MÉDIO", value: "R$ 349", icon: DollarSign, color: "text-[#2F7FD3]" },
   ];
 
+  const updatePlanField = async (planId: string, field: string, value: any) => {
+    try {
+      const { error } = await supabase
+        .from('plans')
+        .update({ [field]: value })
+        .eq('id', planId);
+
+      if (error) throw error;
+      
+      setPlans(prev => prev.map(p => p.id === planId ? { ...p, [field]: value } : p));
+      toast.success("Plano atualizado");
+    } catch (error: any) {
+      toast.error("Erro ao atualizar plano");
+    }
+  };
+
+  const toggleFeature = async (plan: any, moduleId: string) => {
+    const isSelected = plan.features?.includes(moduleId);
+    const newFeatures = isSelected 
+      ? plan.features.filter((id: string) => id !== moduleId) 
+      : [...(plan.features || []), moduleId];
+    
+    await updatePlanField(plan.id, 'features', newFeatures);
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-20">
         {/* Hub Toolbar */}
@@ -115,126 +157,159 @@ const HubPlans = () => {
           </div>
         </header>
 
-        {/* Management List */}
-        <div className="space-y-3">
-          {/* List Header (Desktop) */}
-          <div className="hidden md:grid grid-cols-12 gap-4 px-8 py-3 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">
-            <div className="col-span-3">Identificação do Ativo</div>
-            <div className="col-span-3">Capacidade & Métricas</div>
-            <div className="col-span-3">Escopo de Módulos</div>
-            <div className="col-span-2 text-right">Valor Mensal</div>
-            <div className="col-span-1 text-right">Ações</div>
-          </div>
+        {/* Configuration Matrix */}
+        <div className="bg-white dark:bg-[#0D1117] rounded-[2rem] border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm">
+           <div className="overflow-x-auto">
+             <Table>
+               <TableHeader className="bg-gray-50/50 dark:bg-gray-800/20">
+                 <TableRow className="border-gray-100 dark:border-gray-800 hover:bg-transparent">
+                   <TableHead className="w-[140px] sm:w-[280px] p-3 sm:p-6 text-[10px] font-black uppercase tracking-widest text-[#2F7FD3] sticky left-0 bg-gray-50/95 dark:bg-gray-800/95 z-20 shadow-[2px_0_10px_-2px_rgba(0,0,0,0.1)] sm:shadow-none backdrop-blur-sm">Módulo / Ferramenta</TableHead>
+                   {plans.map((plan) => (
+                     <TableHead key={plan.id} className="min-w-[140px] sm:min-w-[150px] p-3 sm:p-6 text-center">
+                       <div className="flex flex-col items-center gap-2">
+                         <span className="text-xs font-black uppercase tracking-tighter italic text-gray-900 dark:text-white">{plan.name}</span>
+                         <div className="flex items-center gap-2 mt-1">
+                           <span className="text-[9px] font-bold text-[#2F7FD3]">R$</span>
+                           <Input 
+                             type="number"
+                             value={plan.price}
+                             onChange={(e) => updatePlanField(plan.id, 'price', parseFloat(e.target.value))}
+                             className="h-7 w-20 bg-white dark:bg-gray-800/10 border-transparent hover:border-blue-500/30 text-xs font-black p-1 text-center focus-visible:ring-0"
+                           />
+                         </div>
+                       </div>
+                     </TableHead>
+                   ))}
+                   <TableHead className="w-[100px] p-3 sm:p-6 text-right font-bold text-gray-400 hidden sm:table-cell">AÇÕES</TableHead>
+                 </TableRow>
+               </TableHeader>
+               <TableBody>
+                 {/* Capacidades & Limites */}
+                 <TableRow className="bg-gray-50/20 dark:bg-gray-800/10 border-gray-100 dark:border-gray-800 pointer-events-none">
+                    <TableCell colSpan={plans.length + 2} className="py-2 px-6">
+                       <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Capacidades & Limites da Frota</span>
+                    </TableCell>
+                 </TableRow>
+                 
+                 {/* Limite de Pets */}
+                 <TableRow className="border-gray-100 dark:border-gray-800 hover:bg-gray-50/30 dark:hover:bg-gray-800/10 transition-colors">
+                    <TableCell className="p-3 sm:p-6 sticky left-0 bg-white/95 dark:bg-[#0D1117]/95 z-10 shadow-[2px_0_10px_-2px_rgba(0,0,0,0.05)] sm:shadow-none backdrop-blur-sm group-hover:bg-gray-50/95 dark:group-hover:bg-gray-800/95 transition-colors">
+                       <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="p-1.5 sm:p-2 bg-blue-50 dark:bg-blue-900/10 text-blue-500 rounded-lg shrink-0"><Activity size={14} /></div>
+                          <span className="text-[10px] sm:text-xs font-bold text-gray-500 leading-tight">Capacidade de Pets</span>
+                       </div>
+                    </TableCell>
+                    {plans.map((plan) => (
+                      <TableCell key={plan.id} className="p-3 sm:p-6 text-center">
+                        <Input 
+                          type="number"
+                          value={plan.max_pets || ''}
+                          placeholder="∞"
+                          onChange={(e) => updatePlanField(plan.id, 'max_pets', e.target.value ? parseInt(e.target.value) : null)}
+                          className="h-8 w-20 mx-auto bg-transparent border-gray-100 dark:border-gray-800/50 text-xs font-bold text-center"
+                        />
+                      </TableCell>
+                    ))}
+                    <TableCell className="p-3 sm:p-6 text-right opacity-20 hidden sm:table-cell"><Lock size={12} className="ml-auto" /></TableCell>
+                 </TableRow>
 
-          {loading ? (
-            <div className="flex flex-col gap-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-24 bg-gray-100 dark:bg-gray-800/50 animate-pulse rounded-3xl" />
-              ))}
-            </div>
-          ) : plans.map((plan) => (
-            <motion.div
-              layout
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              key={plan.id}
-              className="group relative md:grid grid-cols-12 items-center gap-4 bg-white dark:bg-[#0D1117] p-6 md:px-8 border border-gray-100 dark:border-gray-800 rounded-[2.5rem] hover:ring-2 hover:ring-[#2F7FD3]/10 transition-all shadow-sm hover:shadow-xl hover:shadow-blue-500/5"
-            >
-              {/* identification */}
-              <div className="col-span-3 flex items-center gap-4 mb-4 md:mb-0">
-                <div className={`p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/50 text-[#2F7FD3] border border-gray-100 dark:border-gray-800`}>
-                  {plan.name.includes("Premium") ? <Sparkles size={20} /> : plan.name.includes("Base") ? <Shield size={20} /> : <Activity size={20} />}
-                </div>
-                <div>
-                  <h3 className="font-black text-gray-900 dark:text-white tracking-tighter text-lg leading-tight uppercase italic">{plan.name}</h3>
-                  <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{plan.is_active ? 'Operacional' : 'Inativo'}</span>
-                  </div>
-                </div>
-              </div>
+                 {/* Limite de Usuários */}
+                 <TableRow className="border-gray-100 dark:border-gray-800 hover:bg-gray-50/30 dark:hover:bg-gray-800/10 transition-colors">
+                    <TableCell className="p-3 sm:p-6 border-b border-gray-100 dark:border-gray-800 sticky left-0 bg-white/95 dark:bg-[#0D1117]/95 z-10 shadow-[2px_0_10px_-2px_rgba(0,0,0,0.05)] sm:shadow-none backdrop-blur-sm group-hover:bg-gray-50/95 dark:group-hover:bg-gray-800/95 transition-colors">
+                       <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="p-1.5 sm:p-2 bg-indigo-50 dark:bg-indigo-900/10 text-indigo-500 rounded-lg shrink-0"><Users size={14} /></div>
+                          <span className="text-[10px] sm:text-xs font-bold text-gray-500 leading-tight">Usuários Ativos</span>
+                       </div>
+                    </TableCell>
+                    {plans.map((plan) => (
+                      <TableCell key={plan.id} className="p-3 sm:p-6 text-center border-b border-gray-100 dark:border-gray-800">
+                        <Input 
+                          type="number"
+                          value={plan.max_users || ''}
+                          placeholder="---"
+                          onChange={(e) => updatePlanField(plan.id, 'max_users', e.target.value ? parseInt(e.target.value) : null)}
+                          className="h-8 w-20 mx-auto bg-transparent border-gray-100 dark:border-gray-800/50 text-xs font-bold text-center"
+                        />
+                      </TableCell>
+                    ))}
+                    <TableCell className="p-3 sm:p-6 text-right border-b border-gray-100 dark:border-gray-800 opacity-20 hidden sm:table-cell"><Lock size={12} className="ml-auto" /></TableCell>
+                 </TableRow>
 
-              {/* Metrics */}
-              <div className="col-span-3 grid grid-cols-3 gap-2 mb-4 md:mb-0">
-                <div className="bg-gray-50/50 dark:bg-gray-800/30 p-2 rounded-xl border border-transparent group-hover:border-gray-100 dark:group-hover:border-gray-800 transition-colors">
-                  <div className="flex items-center gap-1.5 text-gray-400 mb-0.5">
-                    <Activity size={10} />
-                    <span className="text-[9px] font-bold uppercase tracking-tight">Pets</span>
-                  </div>
-                  <div className="text-xs font-black dark:text-white tracking-tighter">{plan.max_pets || '∞'}</div>
-                </div>
-                <div className="bg-gray-50/50 dark:bg-gray-800/30 p-2 rounded-xl">
-                  <div className="flex items-center gap-1.5 text-gray-400 mb-0.5">
-                    <Layout size={10} />
-                    <span className="text-[9px] font-bold uppercase tracking-tight">Agend.</span>
-                  </div>
-                  <div className="text-xs font-black dark:text-white tracking-tighter text-ellipsis overflow-hidden whitespace-nowrap">{plan.max_appointments_month || '∞'}</div>
-                </div>
-                <div className="bg-gray-50/50 dark:bg-gray-800/30 p-2 rounded-xl">
-                  <div className="flex items-center gap-1.5 text-gray-400 mb-0.5">
-                    <Users size={10} />
-                    <span className="text-[9px] font-bold uppercase tracking-tight">Users</span>
-                  </div>
-                  <div className="text-xs font-black dark:text-white tracking-tighter">{plan.max_users || '---'}</div>
-                </div>
-              </div>
+                 {/* Gating de Módulos */}
+                 {['Base', 'Avançado'].map((category) => (
+                   <React.Fragment key={category}>
+                     {(category === 'Base' || isExpanded) && (
+                       <>
+                         <TableRow className="bg-gray-50/20 dark:bg-gray-800/10 border-gray-100 dark:border-gray-800">
+                            <TableCell colSpan={plans.length + 2} className="py-2.5 px-4 sm:px-6 sticky left-0 bg-transparent">
+                               <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{category === 'Base' ? 'Módulos Operacionais' : 'Ferramentas de Escala'}</span>
+                            </TableCell>
+                         </TableRow>
+                         {MODULES.filter(m => m.category === category).map((module) => (
+                           <TableRow key={module.id} className="border-gray-100 dark:border-gray-800 group hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-all">
+                             <TableCell className="p-4 sm:p-6 sticky left-0 bg-white/95 dark:bg-[#0D1117]/95 z-10 shadow-[2px_0_10px_-2px_rgba(0,0,0,0.05)] sm:shadow-none backdrop-blur-sm group-hover:bg-gray-50/95 dark:group-hover:bg-gray-800/95 transition-colors">
+                               <span className="text-[11px] sm:text-xs font-bold text-gray-700 dark:text-gray-300 group-hover:text-[#2F7FD3] transition-colors leading-tight line-clamp-2">{module.label}</span>
+                             </TableCell>
+                             {plans.map((plan) => (
+                               <TableCell key={plan.id} className="p-3 sm:p-6 text-center">
+                                 <Switch 
+                                   checked={plan.features?.includes(module.id)}
+                                   onCheckedChange={() => toggleFeature(plan, module.id)}
+                                   className="mx-auto data-[state=checked]:bg-emerald-500"
+                                 />
+                               </TableCell>
+                             ))}
+                             <TableCell className="p-3 sm:p-6 text-right hidden sm:table-cell">
+                               <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                                 <button className="text-gray-400 hover:text-[#2F7FD3] p-1"><Edit size={12} /></button>
+                               </div>
+                             </TableCell>
+                           </TableRow>
+                         ))}
+                       </>
+                     )}
+                     
+                     {category === 'Base' && !isExpanded && (
+                       <TableRow className="border-gray-100 dark:border-gray-800 hover:bg-transparent">
+                         <TableCell colSpan={plans.length + 2} className="p-4 sm:p-6 sticky left-0">
+                           <button 
+                             onClick={() => setIsExpanded(true)}
+                             className="flex items-center gap-2 mx-auto px-6 py-2 bg-gray-50 dark:bg-gray-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/10 text-[#2F7FD3] rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
+                           >
+                             <Plus size={14} />
+                             Ver mais funcionalidades
+                           </button>
+                         </TableCell>
+                       </TableRow>
+                     )}
+                   </React.Fragment>
+                 ))}
+                 
+                 {isExpanded && (
+                   <TableRow className="border-gray-100 dark:border-gray-800 hover:bg-transparent">
+                     <TableCell colSpan={plans.length + 2} className="p-4 sm:p-6 sticky left-0">
+                       <button 
+                         onClick={() => setIsExpanded(false)}
+                         className="flex items-center gap-2 mx-auto px-6 py-2 bg-gray-50 dark:bg-gray-800/50 text-gray-400 hover:text-[#2F7FD3] rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
+                       >
+                         <RefreshCw size={14} className="rotate-180" />
+                         Recolher avançados
+                       </button>
+                     </TableCell>
+                   </TableRow>
+                 )}
+               </TableBody>
+             </Table>
+           </div>
 
-              {/* Modules/Features */}
-              <div className="col-span-3 flex flex-wrap gap-1.5 mb-4 md:mb-0">
-                {plan.features?.slice(0, 3).map((feature: string, i: number) => (
-                  <span key={i} className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/10 text-blue-500 text-[9px] font-black uppercase tracking-widest rounded-lg border border-blue-100/50 dark:border-blue-900/20">
-                    {feature}
-                  </span>
-                ))}
-                {plan.features?.length > 3 && (
-                  <span className="px-2 py-1 bg-gray-50 dark:bg-gray-800 text-gray-400 text-[9px] font-bold uppercase rounded-lg">
-                    +{plan.features.length - 3}
-                  </span>
-                )}
+           {/* Bulk Update Legend */}
+           <div className="p-6 bg-gray-50/50 dark:bg-gray-800/20 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+              <div className="flex items-center gap-4">
+                 <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500" /> Acesso Liberado</div>
+                 <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-gray-200" /> Acesso Gated</div>
               </div>
-
-              {/* Price */}
-              <div className="col-span-2 text-right mb-6 md:mb-0 px-4">
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-0.5">Mensalidade</div>
-                <div className="text-2xl font-black text-[#141B2B] dark:text-white tracking-tighter">
-                  <span className="text-sm font-bold text-[#2F7FD3] mr-1">R$</span>
-                  {plan.price || '0'}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="col-span-1 flex justify-end gap-2">
-                <button 
-                  onClick={() => {
-                    setEditingPlan(plan);
-                    setIsModalOpen(true);
-                  }}
-                  className="p-3 bg-gray-50 dark:bg-gray-800 text-[#141B2B] dark:text-white rounded-2xl border border-transparent hover:border-gray-200 transition-all active:scale-90"
-                  title="Configurar Parâmetros"
-                >
-                  <Edit size={16} />
-                </button>
-                
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="p-3 bg-gray-50 dark:bg-gray-800 text-[#6C7A73] rounded-2xl hover:text-red-500 transition-all focus:outline-none active:scale-90">
-                      <MoreVertical size={16} />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-white dark:bg-[#1A1F2B] border-gray-100 dark:border-gray-800 rounded-2xl shadow-2xl p-2 min-w-[180px]">
-                    <div className="px-3 py-2 text-[8px] font-black text-gray-400 uppercase tracking-widest">Controles de Ativo</div>
-                    <DropdownMenuItem 
-                      onClick={() => handleDeletePlan(plan.id)}
-                      className="flex items-center gap-3 px-3 py-2.5 text-xs font-black text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl cursor-pointer transition-colors uppercase italic"
-                    >
-                      <Trash2 size={14} />
-                      Desativar Ativo
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </motion.div>
-          ))}
+              <p>As alterações refletem instantaneamente nas licenças ativas</p>
+           </div>
         </div>
 
         {/* Canix AI Add-on - Ilustrativo */}

@@ -5,20 +5,23 @@ import pkg from './package.json';
 import crypto from "node:crypto";
 import fs from "node:fs";
 
-function getSourceHash(dir) {
+function getSourceHash(dir, excludePatterns = []) {
   if (!fs.existsSync(dir)) return '0';
   const files = fs.readdirSync(dir, { recursive: true });
   const hash = crypto.createHash('md5');
   files.forEach(f => {
     const p = path.join(dir, f);
-    if (fs.statSync(p).isFile()) {
+    const isExcluded = excludePatterns.some(pattern => p.replace(/\\/g, '/').includes(pattern));
+    
+    if (fs.statSync(p).isFile() && !isExcluded) {
       hash.update(fs.readFileSync(p));
     }
   });
   return hash.digest('hex').substring(0, 8);
 }
 
-const codeFingerprint = getSourceHash(path.resolve(__dirname, 'src'));
+const appFingerprint = getSourceHash(path.resolve(__dirname, 'src'), ['src/pages/hub', 'src/components/hub']);
+const globalFingerprint = getSourceHash(path.resolve(__dirname, 'src'));
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -32,7 +35,8 @@ export default defineConfig(({ mode }) => ({
   plugins: [react()],
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
-    __CODE_FINGERPRINT__: JSON.stringify(codeFingerprint),
+    __CODE_FINGERPRINT__: JSON.stringify(globalFingerprint),
+    __APP_FINGERPRINT__: JSON.stringify(appFingerprint),
   },
   resolve: {
     alias: {

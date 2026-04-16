@@ -2,7 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { AdminSidebar } from './AdminSidebar';
 import { Button } from '@/components/ui/button';
-import { LogOut, Menu } from 'lucide-react';
+import { LogOut, Menu, ShieldCheck } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -63,6 +63,15 @@ export function AdminLayout() {
                     const days = Math.ceil((new Date(plan.trial_ends_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
                     return days > 0 ? `${days} dias de teste` : 'Último dia';
                   })()}
+                </span>
+              </div>
+            )}
+            {/* Global Support Indicator */}
+            {(user?.role === 'admin' || user?.role === 'dev') && !user?.petshopId && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 rounded-full shadow-sm">
+                <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+                <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
+                  Suporte Canix
                 </span>
               </div>
             )}

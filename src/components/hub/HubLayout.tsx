@@ -15,7 +15,8 @@ import {
   X as CloseIcon,
   RefreshCw,
   ArrowUpRight,
-  Info
+  Info,
+  History
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -84,6 +85,7 @@ const HubLayout = ({ children }: HubLayoutProps) => {
     { label: "Dashboard", path: "/", icon: Activity },
     { label: "Licenças", path: "/licenses", icon: Key },
     { label: "Assinaturas", path: "/plans", icon: CreditCard },
+    { label: "Auditoria", path: "/auditoria", icon: History },
     { label: "Protótipo", path: "/prototype", icon: Sparkles },
     { label: "Configurações", path: "/settings", icon: Settings },
   ];
@@ -257,9 +259,11 @@ const HubLayout = ({ children }: HubLayoutProps) => {
                 <div className="w-10 h-10 flex items-center justify-center overflow-hidden">
                   <img src="/src/assets/logoquadrado.png" alt="Canix Icon" className="w-full h-full object-contain" />
                 </div>
-                <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-[#6C7A73]">
-                  <CloseIcon size={24} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-[#6C7A73] hover:text-red-500 transition-colors">
+                    <CloseIcon size={24} />
+                  </button>
+                </div>
               </div>
 
               <nav className="flex-1 flex flex-col gap-2">
@@ -282,13 +286,56 @@ const HubLayout = ({ children }: HubLayoutProps) => {
                   );
                 })}
               </nav>
+              
+              {/* Mobile System Status - Just above Logout */}
+              <div className="mt-auto pt-8 pb-4 flex flex-col items-center gap-3 border-t border-gray-100/50 dark:border-gray-800/50">
+                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#6C7A73] opacity-50 mb-1">Status do Sistema</p>
+                
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="flex items-center justify-between px-4 py-2.5 bg-blue-500/5 dark:bg-blue-500/10 rounded-2xl border border-blue-500/10">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-tight text-blue-700 dark:text-blue-400">Status Lab</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-blue-600/70 dark:text-blue-400/50">v{labVersion}</span>
+                  </div>
 
-              <button 
-                onClick={handleLogout}
-                className="mt-auto flex items-center gap-4 px-6 py-4 text-[#6C7A73] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-2xl font-bold uppercase tracking-widest text-[10px] transition-all"
-              >
-                <LogOut size={20} /> Sair do Hub
-              </button>
+                  <div className={`flex items-center justify-between px-4 py-2.5 rounded-2xl border ${appVersion !== labVersion ? "bg-emerald-500/5 border-emerald-500/10" : "bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/10"}`}>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-1.5 h-1.5 rounded-full bg-emerald-500 ${appVersion !== labVersion ? "animate-bounce" : ""}`} />
+                      <span className="text-[10px] font-black uppercase tracking-tight text-emerald-700 dark:text-emerald-400">Status App</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold text-emerald-600/70 dark:text-emerald-400/50">v{appVersion}</span>
+                      {appVersion !== labVersion && (
+                        <Zap size={10} className="fill-amber-500 text-amber-500 animate-pulse" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-2">
+                <button 
+                  onClick={handleLogout}
+                  className="flex-1 flex items-center gap-4 px-6 py-4 text-[#6C7A73] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-2xl font-bold uppercase tracking-widest text-[10px] transition-all"
+                >
+                  <LogOut size={20} /> Sair do Hub
+                </button>
+                
+                <button 
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsNotificationsOpen(true);
+                  }}
+                  className="p-4 bg-gray-50 dark:bg-gray-800/40 text-[#6C7A73] hover:text-[#2F7FD3] rounded-2xl transition-all relative border border-gray-100 dark:border-gray-800/50"
+                >
+                  <Bell size={20} />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-3 right-3 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-[#161B22]" />
+                  )}
+                </button>
+              </div>
             </motion.aside>
           </>
         )}
@@ -299,8 +346,8 @@ const HubLayout = ({ children }: HubLayoutProps) => {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-20 bg-white/70 dark:bg-[#161B22]/70 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-6 lg:px-10 sticky top-0 z-[100] transition-colors">
-          <div className="flex items-center gap-4">
+        <header className="h-20 bg-white/70 dark:bg-[#161B22]/70 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-6 lg:px-10 pr-12 sm:pr-8 sticky top-0 z-[100] transition-colors">
+          <div className="flex-1 flex items-center gap-4">
             <button 
               onClick={() => setIsMobileMenuOpen(true)}
               aria-label="Abrir menu lateral"
@@ -309,17 +356,15 @@ const HubLayout = ({ children }: HubLayoutProps) => {
               <Menu size={20} />
             </button>
             <TooltipProvider>
-              <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-1.5 bg-blue-50/50 dark:bg-[#2F7FD3]/5 text-[#2F7FD3]/80 text-[8px] sm:text-[9px] font-semibold uppercase tracking-wider rounded-full border border-[#2F7FD3]/10 whitespace-nowrap">
-                <span className="hidden xs:inline opacity-70">Canix Hub</span>
-                <span className="hidden xs:inline w-1 h-1 rounded-full bg-[#2F7FD3]/20" />
+              <div className="hidden lg:flex items-center gap-1.5 sm:gap-3 px-2 sm:px-4 py-1.5 bg-blue-50/50 dark:bg-[#2F7FD3]/5 text-[#2F7FD3]/80 text-[8px] sm:text-[9px] font-semibold uppercase tracking-wider rounded-full border border-[#2F7FD3]/10 max-w-[200px] xs:max-w-none ml-1 sm:ml-2">
+                <span className="hidden leading-none opacity-70">Canix Hub</span>
                 
                  <Tooltip>
                    <TooltipTrigger asChild>
-                     <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-500/10 dark:bg-blue-500/20 rounded-md border border-blue-500/20 group-hover:border-blue-500/40 transition-colors cursor-help shadow-[0_0_15px_-3px_rgba(59,130,246,0.1)]">
-                       <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse ring-2 ring-blue-500/20" />
-                       <span className="text-[10px] font-black uppercase tracking-widest text-blue-700 dark:text-blue-400">Status Lab</span>
-                       <span className="text-[10px] font-bold text-blue-600/70 dark:text-blue-400/50 ml-1">v{labVersion}</span>
-                       <Info size={10} className="opacity-30 ml-1" />
+                     <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-500/10 dark:bg-blue-500/20 rounded-md border border-blue-500/20 group-hover:border-blue-500/40 transition-colors cursor-help shadow-[0_0_15px_-3px_rgba(59,130,246,0.1)]">
+                       <div className="w-1 h-1 rounded-full bg-blue-500 animate-pulse ring-1 ring-blue-500/20" />
+                       <span className="text-[9px] font-black uppercase tracking-tight text-blue-700 dark:text-blue-400"><span className="hidden xs:inline">Status </span>Lab</span>
+                       <span className="text-[9px] font-bold text-blue-600/70 dark:text-blue-400/50 ml-0.5">v{labVersion}</span>
                      </div>
                    </TooltipTrigger>
                    <TooltipContent side="bottom" className="max-w-[280px] text-[10px] p-3 leading-relaxed z-[200] bg-white dark:bg-[#161B22] border-blue-500/20 shadow-xl rounded-xl">
@@ -328,17 +373,16 @@ const HubLayout = ({ children }: HubLayoutProps) => {
                    </TooltipContent>
                  </Tooltip>
  
-                 <span className="w-1 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
+                 <span className="w-px h-3 bg-gray-200 dark:bg-gray-700 mx-0.5" />
                  
                  <Tooltip>
                    <TooltipTrigger asChild>
-                     <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border transition-colors cursor-help shadow-[0_0_15px_-3px_rgba(16,185,129,0.1)] ${appVersion !== labVersion ? "bg-emerald-500/5 border-emerald-500/20" : "bg-emerald-500/10 dark:bg-emerald-500/20 border-emerald-500/20"}`}>
-                       <div className={`w-1.5 h-1.5 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20 ${appVersion !== labVersion ? "animate-bounce" : ""}`} />
-                       <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400">Status App</span>
-                       <span className="text-[10px] font-bold text-emerald-600/70 dark:text-emerald-400/50 ml-1">v{appVersion}</span>
-                       <Info size={10} className="opacity-30 ml-1" />
+                     <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md border transition-colors cursor-help shadow-[0_0_15px_-3px_rgba(16,185,129,0.1)] ${appVersion !== labVersion ? "bg-emerald-500/5 border-emerald-500/20" : "bg-emerald-500/10 dark:bg-emerald-500/20 border-emerald-500/20"}`}>
+                       <div className={`w-1 h-1 rounded-full bg-emerald-500 ring-1 ring-emerald-500/20 ${appVersion !== labVersion ? "animate-bounce" : ""}`} />
+                       <span className="text-[9px] font-black uppercase tracking-tight text-emerald-700 dark:text-emerald-400"><span className="hidden xs:inline">Status </span>App</span>
+                       <span className="text-[9px] font-bold text-emerald-600/70 dark:text-emerald-400/50 ml-0.5">v{appVersion}</span>
                        {appVersion !== labVersion && (
-                         <Zap size={10} className="fill-amber-500 text-amber-500 animate-pulse ml-0.5" />
+                         <Zap size={8} className="fill-amber-500 text-amber-500 animate-pulse ml-0.5" />
                        )}
                      </div>
                    </TooltipTrigger>
@@ -354,7 +398,7 @@ const HubLayout = ({ children }: HubLayoutProps) => {
            <div className="flex items-center gap-3 sm:gap-6">
              <button 
                onClick={() => setIsSearchOpen(true)}
-               className="p-2.5 bg-gray-50 dark:bg-gray-800/50 text-[#6C7A73] dark:text-white rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors xl:hidden"
+               className="p-2.5 bg-gray-50/50 dark:bg-gray-800/40 text-[#141B2B] dark:text-white rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors xl:hidden border border-gray-100 dark:border-gray-800/50"
                aria-label="Abrir pesquisa"
              >
                <Search size={20} />
@@ -404,110 +448,135 @@ const HubLayout = ({ children }: HubLayoutProps) => {
                  className="bg-gray-50 dark:bg-gray-800/50 border border-transparent focus:border-[#2F7FD3]/30 rounded-xl pl-12 pr-10 py-2.5 text-sm transition-all w-48 md:w-80 dark:text-white outline-none focus:bg-white dark:focus:bg-[#1C2128] shadow-sm"
                />
               
-              {isSearching && (
-                <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                   <RefreshCw className="w-3 h-3 text-[#2F7FD3] animate-spin" />
-                </div>
-              )}
+                {isSearching && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                     <RefreshCw className="w-3 h-3 text-[#2F7FD3] animate-spin" />
+                  </div>
+                )}
+              </div>
+            
+            <AnimatePresence>
+              {isSearchOpen && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                  className="fixed sm:absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 sm:top-full sm:left-auto sm:right-0 xl:left-0 xl:right-auto sm:translate-x-0 sm:translate-y-0 xl:w-[450px] mt-3 bg-white dark:bg-[#161B22] border border-gray-100 dark:border-gray-800 rounded-[2rem] shadow-2xl z-[150] overflow-hidden w-[90vw] sm:w-[450px]"
+                >
+                  <div className="xl:hidden p-4 border-b border-gray-50 dark:border-gray-800">
+                    <div className="relative">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#2F7FD3]" size={16} />
+                      <input 
+                        ref={(el) => { if (el && isSearchOpen) el.focus(); }}
+                        placeholder="Pesquisar…" 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full bg-gray-50 dark:bg-black/20 rounded-xl pl-12 pr-4 py-3 text-sm dark:text-white outline-none focus:ring-2 focus:ring-[#2F7FD3]/20"
+                      />
+                    </div>
+                  </div>
 
-             {/* SEARCH RESULTS PANEL */}
-             <AnimatePresence>
-               {isSearchOpen && (
-                 <motion.div 
-                   initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                   exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                   className="absolute top-full left-0 right-0 xl:right-auto xl:w-[450px] mt-3 bg-white dark:bg-[#161B22] border border-gray-100 dark:border-gray-800 rounded-[2rem] shadow-2xl z-[150] overflow-hidden"
-                 >
-                    <div className="max-h-[500px] overflow-y-auto custom-scrollbar p-3">
-                      {searchResults.tenants.length > 0 && (
-                        <div className="mb-4">
-                           {searchResults.tenants.map((t, idx) => {
-                             const isFocused = selectedIndex === idx;
-                             return (
-                               <button 
-                                 key={t.id}
-                                 onMouseEnter={() => setSelectedIndex(idx)}
-                                 onClick={() => { navigate('/licenses?q=' + t.slug); setIsSearchOpen(false); }}
-                                 className={`w-full flex items-center justify-between p-3 rounded-2xl transition-colors group ${isFocused ? 'bg-blue-50 dark:bg-[#2F7FD3]/10' : 'hover:bg-gray-50 dark:hover:bg-slate-800/50'}`}
-                               >
-                                 <div className="flex items-center gap-3">
-                                   <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${isFocused ? 'bg-[#2F7FD3] text-white' : 'bg-blue-50 dark:bg-[#2F7FD3]/10 text-[#2F7FD3]'}`}>
-                                     <Key size={14} />
-                                   </div>
-                                   <div className="text-left">
-                                     <p className={`text-[11px] font-bold ${isFocused ? 'text-[#2F7FD3]' : 'text-[#1E293B] dark:text-white'}`}>{t.name}</p>
-                                     <p className="text-[9px] font-bold text-[#6C7A73] dark:text-slate-500">{t.plan?.name || 'Plano Básico'}</p>
-                                   </div>
-                                 </div>
-                                 <ArrowUpRight size={12} className={`text-[#6C7A73] transition-opacity ${isFocused ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} />
-                               </button>
-                             );
-                           })}
-                         </div>
-                       )}
-  
-                       {searchResults.profiles.length > 0 && (
-                         <div>
-                           <p className="px-3 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#6C7A73]">Proprietários / Contatos</p>
-                           {searchResults.profiles.map((p, idx) => {
-                             const absoluteIndex = searchResults.tenants.length + idx;
-                             const isFocused = selectedIndex === absoluteIndex;
-                             return (
-                               <button 
-                                 key={p.id}
-                                 onMouseEnter={() => setSelectedIndex(absoluteIndex)}
-                                 onClick={() => { navigate('/licenses?q=' + p.full_name); setIsSearchOpen(false); }}
-                                 className={`w-full flex items-center justify-between p-3 rounded-2xl transition-colors group ${isFocused ? 'bg-purple-50 dark:bg-purple-900/10' : 'hover:bg-gray-50 dark:hover:bg-slate-800/50'}`}
-                               >
-                                 <div className="flex items-center gap-3">
-                                   <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${isFocused ? 'bg-purple-500 text-white' : 'bg-purple-50 dark:bg-purple-900/10 text-purple-500'}`}>
-                                     <Sparkles size={14} />
-                                   </div>
-                                   <div className="text-left">
-                                     <p className={`text-[11px] font-bold ${isFocused ? 'text-purple-500' : 'text-[#1E293B] dark:text-white'}`}>{p.full_name}</p>
-                                     <p className="text-[9px] font-bold text-[#6C7A73] dark:text-slate-500">
-                                       {p.tenant?.name || 'Administrador'}
-                                     </p>
-                                   </div>
-                                 </div>
-                                 <ArrowUpRight size={12} className={`text-[#6C7A73] transition-opacity ${isFocused ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} />
-                               </button>
-                             );
-                           })}
-                         </div>
-                       )}
-
-                      {!isSearching && searchResults.tenants.length === 0 && searchResults.profiles.length === 0 && searchQuery.length >= 2 && (
-                        <div className="py-10 text-center">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-[#6C7A73] opacity-50 italic">Nenhum resultado encontrado</p>
+                   <div className="max-h-[500px] overflow-y-auto custom-scrollbar p-3">
+                     {searchResults.tenants.length > 0 && (
+                       <div className="mb-4">
+                          {searchResults.tenants.map((t, idx) => {
+                            const isFocused = selectedIndex === idx;
+                            return (
+                              <button 
+                                key={t.id}
+                                onMouseEnter={() => setSelectedIndex(idx)}
+                                onClick={() => { navigate('/licenses?q=' + t.slug); setIsSearchOpen(false); }}
+                                className={`w-full flex items-center justify-between p-3 rounded-2xl transition-colors group ${isFocused ? 'bg-blue-50 dark:bg-[#2F7FD3]/10' : 'hover:bg-gray-50 dark:hover:bg-slate-800/50'}`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${isFocused ? 'bg-[#2F7FD3] text-white' : 'bg-blue-50 dark:bg-[#2F7FD3]/10 text-[#2F7FD3]'}`}>
+                                    <Key size={14} />
+                                  </div>
+                                  <div className="text-left">
+                                    <p className={`text-[11px] font-bold ${isFocused ? 'text-[#2F7FD3]' : 'text-[#1E293B] dark:text-white'}`}>{t.name}</p>
+                                    <p className="text-[9px] font-bold text-[#6C7A73] dark:text-slate-500">{t.plan?.name || 'Plano Básico'}</p>
+                                  </div>
+                                </div>
+                                <ArrowUpRight size={12} className={`text-[#6C7A73] transition-opacity ${isFocused ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} />
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
-                    </div>
-                    {searchQuery.length >= 2 && (
-                       <div className="p-3 bg-gray-50 dark:bg-black/20 border-t border-gray-50 dark:border-gray-800">
-                         <button 
-                           onClick={() => {
-                             const params = new URLSearchParams(location.search);
-                             params.set('q', searchQuery);
-                             navigate(`${location.pathname}?${params.toString()}`, { replace: true });
-                             setIsSearchOpen(false);
-                           }}
-                           className="w-full py-2.5 bg-white dark:bg-slate-800 rounded-xl text-[9px] font-black uppercase tracking-widest text-[#2F7FD3] border border-gray-100 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all shadow-sm"
-                         >
-                            Filtrar visão atual →
-                         </button>
+ 
+                      {searchResults.profiles.length > 0 && (
+                        <div>
+                          <p className="px-3 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-[#6C7A73]">Proprietários / Contatos</p>
+                          {searchResults.profiles.map((p, idx) => {
+                            const absoluteIndex = searchResults.tenants.length + idx;
+                            const isFocused = selectedIndex === absoluteIndex;
+                            return (
+                              <button 
+                                key={p.id}
+                                onMouseEnter={() => setSelectedIndex(absoluteIndex)}
+                                onClick={() => { navigate('/licenses?q=' + p.full_name); setIsSearchOpen(false); }}
+                                className={`w-full flex items-center justify-between p-3 rounded-2xl transition-colors group ${isFocused ? 'bg-purple-50 dark:bg-purple-900/10' : 'hover:bg-gray-50 dark:hover:bg-slate-800/50'}`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${isFocused ? 'bg-purple-500 text-white' : 'bg-purple-50 dark:bg-purple-900/10 text-purple-500'}`}>
+                                    <Sparkles size={14} />
+                                  </div>
+                                  <div className="text-left">
+                                    <p className={`text-[11px] font-bold ${isFocused ? 'text-purple-500' : 'text-[#1E293B] dark:text-white'}`}>{p.full_name}</p>
+                                    <p className="text-[9px] font-bold text-[#6C7A73] dark:text-slate-500">
+                                      {p.tenant?.name || 'Administrador'}
+                                    </p>
+                                  </div>
+                                </div>
+                                <ArrowUpRight size={12} className={`text-[#6C7A73] transition-opacity ${isFocused ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                     {!isSearching && searchResults.tenants.length === 0 && searchResults.profiles.length === 0 && searchQuery.length >= 2 && (
+                       <div className="py-10 text-center">
+                         <p className="text-[10px] font-black uppercase tracking-widest text-[#6C7A73] opacity-50 italic">Nenhum resultado encontrado</p>
                        </div>
-                    )}
-                 </motion.div>
-               )}
-             </AnimatePresence>
+                     )}
+                   </div>
+                   {searchQuery.length >= 2 && (
+                      <div className="p-3 bg-gray-50 dark:bg-black/20 border-t border-gray-50 dark:border-gray-800">
+                        <button 
+                          onClick={() => {
+                            const params = new URLSearchParams(location.search);
+                            params.set('q', searchQuery);
+                            navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+                            setIsSearchOpen(false);
+                          }}
+                          className="w-full py-2.5 bg-white dark:bg-slate-800 rounded-xl text-[9px] font-black uppercase tracking-widest text-[#2F7FD3] border border-gray-100 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all shadow-sm"
+                        >
+                           Filtrar visão atual →
+                        </button>
+                      </div>
+                   )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+            
+            <AnimatePresence>
+              {isSearchOpen && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setIsSearchOpen(false)}
+                  className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[140] xl:hidden"
+                />
+              )}
+            </AnimatePresence>
             </div>
 
 
             <div className="flex items-center gap-2 sm:gap-4 border-l dark:border-gray-700 pl-3 sm:pl-6">
               <ThemeToggle />
-             <div className="relative">
+             <div className="relative hidden lg:block">
                 <button 
                   onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
                   className="p-2.5 sm:p-3 bg-gray-50 dark:bg-gray-800/50 text-[#141B2B] dark:text-white rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors relative"
@@ -525,7 +594,7 @@ const HubLayout = ({ children }: HubLayoutProps) => {
                       initial={{ opacity: 0, y: 15, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 15, scale: 0.95 }}
-                      className="fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 mt-4 sm:mt-4 bg-white dark:bg-[#161B22] border border-gray-100 dark:border-gray-800 rounded-3xl shadow-2xl z-[130] overflow-hidden sm:w-96"
+                      className="fixed sm:absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 sm:top-full sm:left-auto sm:right-0 sm:translate-x-0 sm:translate-y-0 mt-4 sm:mt-4 bg-white dark:bg-[#161B22] border border-gray-100 dark:border-gray-800 rounded-3xl shadow-2xl z-[130] overflow-hidden w-[90vw] sm:w-96"
                     >
                       <div className="p-6 border-b border-gray-50 dark:border-gray-800 flex items-center justify-between">
                         <h3 className="text-xs font-black uppercase tracking-widest text-[#1E293B] dark:text-white">Central de Notificações</h3>
@@ -592,7 +661,7 @@ const HubLayout = ({ children }: HubLayoutProps) => {
                 </AnimatePresence>
               </div>
 
-              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#2F7FD3] transition-all">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#2F7FD3] transition-all hidden lg:block">
                 <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="Admin" />
               </div>
             </div>

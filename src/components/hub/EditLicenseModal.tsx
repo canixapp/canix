@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Save, AlertCircle, Trash2, ShieldCheck, Zap, Upload, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { insertAuditLog } from "@/services/auditLogService";
 
 interface EditLicenseModalProps {
   isOpen: boolean;
@@ -12,6 +14,7 @@ interface EditLicenseModalProps {
 }
 
 const EditLicenseModal = ({ isOpen, onClose, onSuccess, tenant }: EditLicenseModalProps) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     status: "active",
@@ -144,6 +147,34 @@ const EditLicenseModal = ({ isOpen, onClose, onSuccess, tenant }: EditLicenseMod
         .eq('id', tenant.id);
 
       if (petshopErr) throw petshopErr;
+
+      // Registrar logs de auditoria
+      if (user) {
+        if (formData.status !== tenant.status) {
+          insertAuditLog({
+            actor_id: user.id,
+            action: 'update',
+            entity: 'license',
+            target_id: tenant.id,
+            field: 'status',
+            old_value: JSON.stringify(tenant.status),
+            new_value: JSON.stringify(formData.status),
+            details: { name: tenant.name }
+          });
+        }
+        if (formData.plan_id !== tenant.plan_id) {
+          insertAuditLog({
+            actor_id: user.id,
+            action: 'update',
+            entity: 'license',
+            target_id: tenant.id,
+            field: 'plan_id',
+            old_value: JSON.stringify(tenant.plan_id),
+            new_value: JSON.stringify(formData.plan_id),
+            details: { name: tenant.name }
+          });
+        }
+      }
 
       toast.success("Licença atualizada!", {
         description: "As alterações foram replicadas para o petshop."

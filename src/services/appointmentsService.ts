@@ -74,15 +74,33 @@ export interface AppointmentPetInsert {
 export async function getAppointments(petshopId?: string): Promise<AppointmentRow[]> {
   const targetId = petshopId || PETSHOP_ID;
   const { data, error } = await supabase
-    .from('appointments')
-    .select(`*, appointment_pets(*)`)
-    .eq('petshop_id', targetId)
-    .order('date', { ascending: false })
-    .order('time', { ascending: false });
+    .from('agendamentos')
+    .select(`*`)
+    .eq('unidade_id', targetId)
+    .order('data', { ascending: false })
+    .order('horario', { ascending: false });
   if (error) { console.error('getAppointments error:', error); return []; }
+  
   return (data || []).map(a => ({
-    ...a,
-    pets: a.appointment_pets || [],
+    id: a.id,
+    petshop_id: a.unidade_id,
+    customer_id: a.cliente_id,
+    service_id: a.servico_id,
+    service_name: 'Serviço', // Needs join or fetch
+    date: a.data,
+    time: a.horario,
+    status: a.status,
+    price: a.valor,
+    payment_status: 'pendente', // Default
+    payment_method: null,
+    payment_amount: null,
+    completed_at: null,
+    cancel_reason: null,
+    notes: a.obs,
+    origin: 'sistema',
+    created_at: a.criado_em,
+    updated_at: a.criado_em,
+    pets: []
   })) as AppointmentRow[];
 }
 
@@ -92,19 +110,19 @@ export async function getAppointmentsWithProfiles(petshopId?: string): Promise<A
 
   const customerIds = [...new Set(appointments.map(a => a.customer_id))];
   const { data: profiles } = await supabase
-    .from('profiles')
-    .select('user_id, name, phone')
-    .in('user_id', customerIds);
+    .from('clientes')
+    .select('id, nome, telefone')
+    .in('id', customerIds);
 
-  const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
+  const profileMap = new Map((profiles || []).map(p => [p.id, p]));
 
   return appointments.map(a => {
     const profile = profileMap.get(a.customer_id);
 
     return {
       ...a,
-      customer_name: profile?.name || extractTutorNameFromAppointmentNotes(a.notes) || '',
-      customer_phone: profile?.phone || extractPhoneFromAppointmentNotes(a.notes) || '',
+      customer_name: profile?.nome || extractTutorNameFromAppointmentNotes(a.notes) || '',
+      customer_phone: profile?.telefone || extractPhoneFromAppointmentNotes(a.notes) || '',
     };
   });
 }
@@ -121,45 +139,42 @@ export async function createAppointment(data: {
   pets: { pet_id: string; pet_name: string; pet_size?: string; pet_breed?: string }[];
 }, petshopId?: string): Promise<AppointmentRow | null> {
   const targetId = petshopId || PETSHOP_ID;
-  const insertData: AppointmentInsert = {
-    petshop_id: targetId,
-    customer_id: data.customer_id,
-    service_name: data.service_name,
-    service_id: data.service_id || null,
-    date: data.date,
-    time: data.time,
-    price: data.price || 0,
-    origin: data.origin || 'sistema',
-    notes: data.notes || '',
+  const insertData = {
+    unidade_id: targetId,
+    cliente_id: data.customer_id,
+    servico_id: data.service_id || '',
+    data: data.date,
+    horario: data.time,
+    valor: data.price || 0,
+    obs: data.notes || '',
     status: 'pendente',
-    payment_status: 'nao_cobrado',
   };
 
   const { data: apt, error } = await supabase
-    .from('appointments')
+    .from('agendamentos')
     .insert(insertData)
     .select()
     .single();
   
   if (error || !apt) { 
-    console.error('createAppointment insert error:', error?.message, error?.details, error?.hint, error?.code); 
+    console.error('createAppointment insert error:', error?.message); 
     throw new Error(error?.message || 'Failed to create appointment'); 
   }
   
-  // Insert appointment pets
-  if (data.pets.length > 0) {
-    const petRows: AppointmentPetInsert[] = data.pets.map(p => ({
-      appointment_id: apt.id,
-      pet_id: p.pet_id,
-      pet_name: p.pet_name,
-      pet_size: p.pet_size || null,
-      pet_breed: p.pet_breed || null,
-    }));
-     const { error: petsError } = await supabase.from('appointment_pets').insert(petRows);
-     if (petsError) console.error('appointment_pets insert error:', petsError.message, petsError.details, petsError.hint);
-  }
-  
-  return apt as AppointmentRow;
+  const a = apt as any;
+  return {
+    id: a.id,
+    petshop_id: a.unidade_id,
+    customer_id: a.cliente_id,
+    service_id: a.servico_id,
+    service_name: data.service_name,
+    date: a.data,
+    time: a.horario,
+    status: a.status,
+    price: a.valor,
+    notes: a.obs,
+    created_at: a.criado_em,
+  } as any;
 }
 
 export async function updateAppointmentStatus(
@@ -167,11 +182,7 @@ export async function updateAppointmentStatus(
   status: AppointmentStatus,
   extra?: { cancel_reason?: string; completed_at?: string }
 ): Promise<boolean> {
-  const updates: AppointmentUpdate = { status, ...extra };
-  if (status === 'realizado' && !updates.completed_at) {
-    updates.completed_at = new Date().toISOString();
-  }
-  const { error } = await supabase.from('appointments').update(updates).eq('id', id);
+  const { error } = await supabase.from('agendamentos').update({ status }).eq('id', id);
   return !error;
 }
 
@@ -181,23 +192,17 @@ export async function setAppointmentPayment(
   payment_method?: PaymentMethod,
   payment_amount?: number
 ): Promise<boolean> {
-  const updates: AppointmentUpdate = { 
-    payment_status, 
-    payment_method: payment_method || null, 
-    payment_amount: payment_amount || null 
-  };
   const { error } = await supabase
-    .from('appointments')
-    .update(updates)
+    .from('agendamentos')
+    .update({ valor: payment_amount })
     .eq('id', id);
   return !error;
 }
 
 export async function rescheduleAppointment(id: string, date: string, time: string): Promise<boolean> {
-  const updates: AppointmentUpdate = { date, time, status: 'remarcado' };
   const { error } = await supabase
-    .from('appointments')
-    .update(updates)
+    .from('agendamentos')
+    .update({ data: date, horario: time, status: 'remarcado' })
     .eq('id', id);
   return !error;
 }

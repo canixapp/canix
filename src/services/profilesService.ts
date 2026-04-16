@@ -31,15 +31,28 @@ export async function getProfile(userId: string): Promise<ProfileRow | null> {
 }
 
 export async function getClientProfiles(petshopId?: string): Promise<ProfileRow[]> {
-  const targetId = petshopId || PETSHOP_ID;
   const { data, error } = await supabase
-    .from('profiles')
-    .select('*, pets!owner_id(id, name, size, breed)')
-    .eq('petshop_id', targetId)
-    .order('name');
+    .from('clientes')
+    .select('*')
+    .order('nome');
   
-  if (error) return [];
-  return (data || []) as unknown as ProfileRow[];
+  if (error) {
+    console.error('getClientProfiles error:', error);
+    return [];
+  }
+
+  return (data || []).map(d => ({
+    id: d.id,
+    user_id: d.id, // Assuming id is user_id in this context
+    name: d.nome,
+    phone: d.telefone,
+    email: d.email,
+    active: true,
+    petshop_id: petshopId || PETSHOP_ID,
+    profile_completed: true,
+    created_at: d.data_cadastro,
+    updated_at: d.data_cadastro,
+  })) as ProfileRow[];
 }
 
 export interface ProfileInsert {

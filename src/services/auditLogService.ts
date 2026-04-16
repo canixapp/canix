@@ -37,6 +37,30 @@ export async function getRecentAuditLogs(hoursBack = 48): Promise<AuditLogRow[]>
   return (data || []) as AuditLogRow[];
 }
 
+export interface AuditLogWithActor extends AuditLogRow {
+  actor_name?: string;
+}
+
+export async function getAuditLogsWithActors(limit = 100): Promise<AuditLogWithActor[]> {
+  const { data, error } = await supabase
+    .from('audit_log')
+    .select(`
+      *,
+      profiles!audit_log_actor_id_fkey (
+        name
+      )
+    `)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+
+  return (data || []).map((log: any) => ({
+    ...log,
+    actor_name: log.profiles?.name || 'Sistema'
+  }));
+}
+
 export async function insertAuditLog(entry: AuditLogInsert) {
   const { error } = await supabase
     .from('audit_log')
@@ -44,10 +68,45 @@ export async function insertAuditLog(entry: AuditLogInsert) {
   if (error) console.error('Audit log error:', error);
 }
 
+/** 
+ * Reverts a change recorded in an audit log entry.
+ */
+export async function rollbackChange(log: AuditLogRow) {
+  if (!log.entity || !log.field || !log.target_id) {
+    throw new Error('Dados insuficientes para reversão.');
+  }
+
+  // Parse values (all stored as JSON strings in the log for reliability)
+  let valToRestore: any;
+  try {
+    valToRestore = JSON.parse(log.old_value || 'null');
+  } catch {
+    valToRestore = log.old_value;
+  }
+
+  // Mapping entities to table names
+  const entityMap: Record<string, string> = {
+    'plan': 'plans',
+    'license': 'unidades_petshop',
+    'petshop': 'unidades_petshop',
+    'profile': 'profiles'
+  };
+
+  const table = entityMap[log.entity] || log.entity;
+
+  const { error } = await supabase
+    .from(table)
+    .update({ [log.field]: valToRestore })
+    .eq('id', log.target_id);
+
+  if (error) throw error;
+}
+
 /** Log multiple field changes at once */
 export async function logFieldChanges(
   actorId: string,
   entity: string,
+  targetId: string,
   oldValues: Record<string, unknown>,
   newValues: Record<string, unknown>,
 ) {
@@ -60,6 +119,7 @@ export async function logFieldChanges(
         actor_id: actorId,
         action: 'update',
         entity,
+        target_id: targetId,
         field: key,
         old_value: oldVal,
         new_value: newVal,

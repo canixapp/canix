@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      agendamentos: {
+        Row: {
+          id: string
+          unidade_id: string
+          cliente_id: string
+          servico_id: string
+          data: string
+          horario: string
+          status: string
+          valor: number | null
+          obs: string | null
+          criado_em: string
+        }
+        Insert: {
+          id?: string
+          unidade_id: string
+          cliente_id: string
+          servico_id: string
+          data: string
+          horario: string
+          status?: string
+          valor?: number | null
+          obs?: string | null
+          criado_em?: string
+        }
+        Update: {
+          id?: string
+          unidade_id?: string
+          cliente_id?: string
+          servico_id?: string
+          data?: string
+          horario?: string
+          status?: string
+          valor?: number | null
+          obs?: string | null
+          criado_em?: string
+        }
+        Relationships: []
+      }
       appointment_pets: {
         Row: {
           appointment_id: string
@@ -173,6 +212,60 @@ export type Database = {
           new_value?: string | null
           old_value?: string | null
           target_id?: string | null
+        }
+        Relationships: []
+      }
+      clientes: {
+        Row: {
+          id: string
+          nome: string
+          telefone: string | null
+          email: string | null
+          endereco: string | null
+          tags: string[] | null
+          data_cadastro: string
+          session_version: number
+        }
+        Insert: {
+          id?: string
+          nome: string
+          telefone?: string | null
+          email?: string | null
+          endereco?: string | null
+          tags?: string[] | null
+          data_cadastro?: string
+          session_version?: number
+        }
+        Update: {
+          id?: string
+          nome?: string
+          telefone?: string | null
+          email?: string | null
+          endereco?: string | null
+          tags?: string[] | null
+          data_cadastro?: string
+          session_version?: number
+        }
+        Relationships: []
+      }
+      configuracoes_agente: {
+        Row: {
+          id: string
+          chave: string
+          valor: string
+          descricao: string | null
+        }
+        Insert: {
+          id?: string
+          chave: string
+          valor: string
+          descricao?: string | null
+        }
+        Update: {
+          id?: string
+          chave?: string
+          valor?: string
+          descricao?: string | null
         }
         Relationships: []
       }
@@ -891,6 +984,39 @@ export type Database = {
           },
         ]
       }
+      servicos_precos: {
+        Row: {
+          id: string
+          unidade_id: string
+          servico: string
+          descricao: string | null
+          preco_pequeno: number | null
+          preco_medio: number | null
+          preco_grande: number | null
+          criado_em: string
+        }
+        Insert: {
+          id?: string
+          unidade_id: string
+          servico: string
+          descricao?: string | null
+          preco_pequeno?: number | null
+          preco_medio?: number | null
+          preco_grande?: number | null
+          criado_em?: string
+        }
+        Update: {
+          id?: string
+          unidade_id?: string
+          servico?: string
+          descricao?: string | null
+          preco_pequeno?: number | null
+          preco_medio?: number | null
+          preco_grande?: number | null
+          criado_em?: string
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           comment: string | null
@@ -999,6 +1125,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      unidades_petshop: {
+        Row: {
+          id: string
+          slug: string
+          nome: string
+          telefone: string | null
+          endereco: string | null
+          horarios: string | null
+          logomarca_url: string | null
+          cor_primaria: string | null
+          criado_em: string
+        }
+        Insert: {
+          id?: string
+          slug: string
+          nome: string
+          telefone?: string | null
+          endereco?: string | null
+          horarios?: string | null
+          logomarca_url?: string | null
+          cor_primaria?: string | null
+          criado_em?: string
+        }
+        Update: {
+          id?: string
+          slug?: string
+          nome?: string
+          telefone?: string | null
+          endereco?: string | null
+          horarios?: string | null
+          logomarca_url?: string | null
+          cor_primaria?: string | null
+          criado_em?: string
+        }
+        Relationships: []
       }
       user_accounts: {
         Row: {

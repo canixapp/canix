@@ -30,6 +30,7 @@ const HubSecurity = lazy(() => import("./pages/hub/Security"));
 const HubSettings = lazy(() => import("./pages/hub/Settings"));
 const HubPrototype = lazy(() => import("./pages/hub/Prototype"));
 const HubLogin = lazy(() => import("./pages/hub/Login"));
+const HubAudit = lazy(() => import("./pages/hub/AuditLogs"));
 import HubProtectedRoute from "@/components/hub/HubProtectedRoute";
 import HubErrorBoundary from "@/components/hub/HubErrorBoundary";
 
@@ -73,7 +74,10 @@ function ProfileCompletionGate() {
     );
   }
 
-  if (!user || !needsProfileCompletion) return null;
+  // O modal de conclusão de perfil (PET) só deve aparecer no contexto de um Petshop (tenant)
+  const tenantSlug = getTenantSlug();
+  if (!user || !needsProfileCompletion || !tenantSlug) return null;
+
   return (
     <CompleteProfileModal
       userId={user.id}
@@ -123,6 +127,7 @@ const App = () => {
                                 <Route path="/licenses" element={<HubLicenses />} />
                                 <Route path="/prototype" element={<HubPrototype />} />
                                 <Route path="/plans" element={<HubPlans />} />
+                                <Route path="/auditoria" element={<HubAudit />} />
                                 <Route path="/security" element={<HubSecurity />} />
                                 <Route path="/settings" element={<HubSettings />} />
                               </Route>

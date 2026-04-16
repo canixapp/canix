@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Save, ShieldCheck, User, Store, Globe, Sparkles, CreditCard, Phone, Mail, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { insertAuditLog } from "@/services/auditLogService";
 
 interface NewLicenseModalProps {
   isOpen: boolean;
@@ -11,6 +13,7 @@ interface NewLicenseModalProps {
 }
 
 const NewLicenseModal = ({ isOpen, onClose, onSuccess }: NewLicenseModalProps) => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [plans, setPlans] = useState<any[]>([]);
   const [formData, setFormData] = useState({
@@ -141,6 +144,17 @@ const NewLicenseModal = ({ isOpen, onClose, onSuccess }: NewLicenseModalProps) =
 
       if (authError) {
         console.warn('Auth signup error (maybe email exists):', authError.message);
+      }
+
+      // Registrar log de auditoria
+      if (user) {
+        insertAuditLog({
+          actor_id: user.id,
+          action: 'insert',
+          entity: 'license',
+          target_id: petshopId,
+          details: { name: formData.name, slug: slug, plan_id: formData.plan_id }
+        });
       }
 
       toast.success("Licença criada com sucesso!", {

@@ -191,8 +191,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         { 
           event: '*', 
           schema: 'public', 
-          table: 'appointments',
-          filter: `petshop_id=eq.${petshop.id}`
+          table: 'agendamentos',
+          filter: `unidade_id=eq.${petshop.id}`
         },
         () => {
           refreshAppointments();

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Save, CreditCard, Sparkles, Shield, CheckCircle2, List } from "lucide-react";
+import { X, Save, CreditCard, Sparkles, Shield, CheckCircle2, List, Zap, Cpu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -33,8 +33,6 @@ const NewPlanModal = ({ isOpen, onClose, onSuccess, plan }: NewPlanModalProps) =
     price: "",
     max_pets: "",
     max_appointments_month: "",
-    max_users: "",
-    support_tier: "Standard",
     max_users: "",
     support_tier: "Standard",
     features: [] as string[]
@@ -99,26 +97,23 @@ const NewPlanModal = ({ isOpen, onClose, onSuccess, plan }: NewPlanModalProps) =
           .update(planData)
           .eq('id', plan.id);
         if (error) throw error;
-        toast.success("Plano atualizado com sucesso!");
+        toast.success("Plano atualizado!", { icon: "🛸" });
       } else {
         const { error } = await supabase
           .from('plans')
           .insert([planData]);
         if (error) throw error;
-        toast.success("Plano criado com sucesso!");
+        toast.success("Plano propagado com sucesso!", { icon: "🚀" });
       }
 
       onSuccess();
       onClose();
-      setFormData({ name: "", price: "", max_pets: "", max_appointments_month: "", max_users: "", support_tier: "Standard", features: [] });
     } catch (error: any) {
-      toast.error("Erro ao criar plano", { description: error.message });
+      toast.error("Critical System Error", { description: error.message });
     } finally {
       setLoading(false);
     }
   };
-
-  const primaryGradient = "from-[#1E3A8A] to-[#2F7FD3]";
 
   return (
     <AnimatePresence>
@@ -129,153 +124,141 @@ const NewPlanModal = ({ isOpen, onClose, onSuccess, plan }: NewPlanModalProps) =
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-[#0D1117]/80 backdrop-blur-md"
+            className="absolute inset-0 bg-background/90 backdrop-blur-xl"
           />
           
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.98, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative w-full max-w-xl bg-white dark:bg-[#161B22] rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800 flex flex-col max-h-[90vh]"
+            exit={{ opacity: 0, scale: 0.98, y: 15 }}
+            className="relative w-full max-w-3xl bg-card/60 backdrop-blur-3xl rounded-[3.5rem] shadow-[0_40px_100px_rgba(0,0,0,0.5)] overflow-hidden border border-border/50 flex flex-col max-h-[92vh]"
           >
-            <div className={`h-24 bg-gradient-to-br ${primaryGradient} opacity-5 absolute top-0 left-0 w-full pointer-events-none`} />
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#2F7FD3] to-transparent opacity-50" />
             
-            <header className="p-8 pb-4 flex justify-between items-start relative">
-              <div>
-                <div className="flex items-center gap-2 text-[#2F7FD3] mb-1">
-                  <Sparkles size={14} />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] leading-none">Canix Hub Business</span>
+            <header className="px-12 pt-12 pb-8 flex justify-between items-start relative">
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 rounded-[2rem] bg-muted/50 border border-border/50 flex items-center justify-center text-primary shadow-2xl group-hover:scale-105 transition-transform duration-500">
+                  <Cpu size={32} strokeWidth={1.5} />
                 </div>
-                <h2 className="text-2xl font-black tracking-tight dark:text-white leading-tight italic">
-                  {plan ? "Editar Plano Comercial" : "Novo Plano Comercial"}
-                </h2>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-primary">
+                    <Zap size={10} className="fill-primary" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em] leading-none">Management Console</span>
+                  </div>
+                  <h2 className="text-3xl font-black tracking-tighter text-foreground leading-none italic uppercase">
+                    {plan ? "Update Node" : "Deploy Protocol"}
+                  </h2>
+                </div>
               </div>
               <button 
                 onClick={onClose}
-                className="p-2 bg-gray-50 dark:bg-gray-800 text-[#6C7A73] rounded-xl hover:bg-gray-100 transition-colors"
+                className="p-4 bg-muted/40 text-muted-foreground rounded-full hover:text-foreground hover:bg-muted/80 transition-all border border-border/50"
               >
-                <X size={20} />
+                <X size={24} />
               </button>
             </header>
 
-            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 pt-4 space-y-6 custom-scrollbar">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[#64748B] ml-2 flex items-center gap-2">
-                    <Shield size={12} className="text-[#2F7FD3]" /> Nome do Plano
-                  </label>
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-12 py-8 space-y-12 custom-scrollbar no-scrollbar">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">Plan Identifier</label>
                   <input
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Ex: Plano Base"
-                    className="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-800/40 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none font-medium"
+                    placeholder="Ex: ENTERPRISE_V1"
+                    className="w-full px-8 py-5 bg-background/50 border border-border/50 rounded-3xl focus:border-primary/50 transition-all text-foreground outline-none font-bold placeholder:text-muted-foreground/20 text-lg tracking-tight"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[#64748B] ml-2 flex items-center gap-2">
-                    <CreditCard size={12} className="text-[#2F7FD3]" /> Valor Mensal (R$)
-                  </label>
-                  <input
-                    required
-                    type="number"
-                    step="0.01"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    placeholder="199.90"
-                    className="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-800/40 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none font-medium"
-                  />
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 ml-2">Value (BRL / Mês)</label>
+                  <div className="relative group/input">
+                    <div className="absolute left-8 top-1/2 -translate-y-1/2 text-xs font-black text-primary/40 group-focus-within/input:text-primary transition-colors">R$</div>
+                    <input
+                      required
+                      type="number"
+                      step="0.01"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      className="w-full pl-16 pr-8 py-5 bg-background/50 border border-border/50 rounded-3xl focus:border-primary/50 transition-all text-foreground outline-none font-black tabular-nums text-2xl tracking-tighter"
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[#64748B] ml-2 flex items-center gap-2">
-                    <CheckCircle2 size={12} className="text-[#2F7FD3]" /> Limite de Pets
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.max_pets}
-                    onChange={(e) => setFormData({ ...formData, max_pets: e.target.value })}
-                    placeholder="50 (opcional)"
-                    className="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-800/40 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none font-medium"
-                  />
-                </div>
+                {[
+                  { id: 'max_pets', label: 'Pet Capacity', icon: Shield },
+                  { id: 'max_appointments_month', label: 'Booking Limit', icon: CheckCircle2 },
+                  { id: 'max_users', label: 'Operator Limit', icon: Shield },
+                ].map(field => (
+                  <div key={field.id} className="space-y-4">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">{field.label}</label>
+                    <input
+                      type="number"
+                      value={(formData as any)[field.id]}
+                      onChange={(e) => setFormData({ ...formData, [field.id]: e.target.value })}
+                      placeholder="Unlimited (∞)"
+                      className="w-full px-8 py-5 bg-background/50 border border-border/50 rounded-3xl focus:border-primary/50 transition-all text-foreground outline-none font-bold placeholder:text-muted-foreground/20 tabular-nums text-lg"
+                    />
+                  </div>
+                ))}
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[#64748B] ml-2 flex items-center gap-2">
-                    <CheckCircle2 size={12} className="text-[#2F7FD3]" /> Limite Agendamentos
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.max_appointments_month}
-                    onChange={(e) => setFormData({ ...formData, max_appointments_month: e.target.value })}
-                    placeholder="200 (opcional)"
-                    className="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-800/40 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none font-medium"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[#64748B] ml-2 flex items-center gap-2">
-                    <Shield size={12} className="text-[#2F7FD3]" /> Limite Usuários
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.max_users}
-                    onChange={(e) => setFormData({ ...formData, max_users: e.target.value })}
-                    placeholder="10 (opcional)"
-                    className="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-800/40 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none font-medium"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[#64748B] ml-2 flex items-center gap-2">
-                    <Sparkles size={12} className="text-[#2F7FD3]" /> Nível de Suporte
-                  </label>
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-2">Support Tier</label>
                   <select
                     value={formData.support_tier}
                     onChange={(e) => setFormData({ ...formData, support_tier: e.target.value })}
-                    className="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-800/40 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none font-medium appearance-none"
+                    className="w-full px-8 py-5 bg-background/50 border border-border/50 rounded-3xl focus:border-primary/50 transition-all text-foreground outline-none font-bold appearance-none cursor-pointer text-lg"
                   >
-                    <option value="Standard">Standard (Ticket)</option>
-                    <option value="Priority">Priority (Chat)</option>
-                    <option value="Dedicated">Dedicated (Manager)</option>
+                    <option value="Standard">Standard (24h)</option>
+                    <option value="Priority">Priority (1h)</option>
+                    <option value="Dedicated">Dedicated (Real-time)</option>
                   </select>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[#64748B] ml-2 flex items-center gap-2">
-                  <List size={12} className="text-[#2F7FD3]" /> Configuração de Módulos (Gated)
-                </label>
+              <div className="space-y-8 pb-12">
+                <div className="flex items-center gap-6">
+                   <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-border/50 to-transparent" />
+                   <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/60">Module Access Control</span>
+                   <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-border/50 to-transparent" />
+                </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
                   {['Base', 'Avançado'].map(category => (
-                    <div key={category} className="space-y-3">
-                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter px-2">{category}</p>
-                      <div className="space-y-2">
+                    <div key={category} className="space-y-6">
+                      <div className="flex items-center gap-3 px-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        <p className="text-[11px] font-black text-foreground uppercase tracking-tight">{category}</p>
+                      </div>
+                      <div className="space-y-3">
                         {MODULES.filter(m => m.category === category).map(module => (
                           <label 
                             key={module.id}
-                            className={`flex items-center gap-3 p-3 rounded-2xl cursor-pointer border transition-all ${
+                            className={`flex items-center justify-between p-5 rounded-3xl cursor-pointer border transition-all duration-300 group ${
                               formData.features.includes(module.id)
-                                ? 'bg-blue-50/50 dark:bg-blue-600/10 border-blue-200 dark:border-blue-900/40 text-[#2F7FD3]' 
-                                : 'bg-gray-50/50 dark:bg-gray-800/30 border-transparent text-gray-400 opacity-60'
+                                ? 'bg-primary/10 border-primary/40 shadow-lg shadow-primary/5' 
+                                : 'bg-background/40 border-border/50 text-muted-foreground hover:border-primary/20 hover:bg-background/60 hover:-translate-y-0.5'
                             }`}
                           >
-                            <input 
-                              type="checkbox"
-                              className="hidden"
-                              checked={formData.features.includes(module.id)}
-                              onChange={() => handleToggleModule(module.id)}
-                            />
-                            {formData.features.includes(module.id) ? (
-                              <div className="w-4 h-4 bg-[#2F7FD3] rounded-md flex items-center justify-center">
-                                <CheckCircle2 size={10} className="text-white" />
+                            <span className={`text-[11px] font-bold uppercase leading-tight transition-colors ${
+                              formData.features.includes(module.id) ? 'text-primary' : ''
+                            }`}>{module.label}</span>
+                            <div className="relative">
+                              <input 
+                                type="checkbox"
+                                className="sr-only"
+                                checked={formData.features.includes(module.id)}
+                                onChange={() => handleToggleModule(module.id)}
+                              />
+                              <div className={`w-6 h-6 rounded-xl border-2 transition-all duration-300 flex items-center justify-center ${
+                                formData.features.includes(module.id)
+                                  ? 'bg-primary border-primary scale-110' 
+                                  : 'border-border/60 group-hover:border-primary/40'
+                              }`}>
+                                {formData.features.includes(module.id) && <CheckCircle2 size={14} className="text-white fill-white/20" />}
                               </div>
-                            ) : (
-                              <div className="w-4 h-4 rounded-md border-2 border-gray-300 dark:border-gray-700" />
-                            )}
-                            <span className="text-[11px] font-black uppercase tracking-tight">{module.label}</span>
+                            </div>
                           </label>
                         ))}
                       </div>
@@ -285,21 +268,23 @@ const NewPlanModal = ({ isOpen, onClose, onSuccess, plan }: NewPlanModalProps) =
               </div>
             </form>
 
-            <footer className="p-8 border-t border-gray-100 dark:border-gray-800">
-              <button
+            <footer className="p-12 bg-muted/20 border-t border-border/30">
+              <motion.button
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={(e) => handleSubmit(e as any)}
                 disabled={loading}
-                className={`w-full py-4 bg-gradient-to-br ${primaryGradient} text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50`}
+                className={`w-full py-6 bg-primary text-primary-foreground rounded-[2.5rem] font-black uppercase tracking-[0.3em] text-xs shadow-2xl shadow-primary/20 flex items-center justify-center gap-3 transition-all disabled:opacity-50`}
               >
                 {loading ? (
-                  <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-4 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
-                    <Save size={18} />
-                    <span>{plan ? "Salvar Alterações" : "Criar Plano Comercial"}</span>
+                    <Save size={20} />
+                    <span>{plan ? "Commit Protocol" : "Deploy SaaS Node"}</span>
                   </>
                 )}
-              </button>
+              </motion.button>
             </footer>
           </motion.div>
         </div>

@@ -40,6 +40,7 @@ export interface User {
   avatarUrl?: string;
   profileCompleted?: boolean;
   mustChangePassword?: boolean;
+  petshopId?: string | null;
 }
 
 interface RegisterPetData {
@@ -123,6 +124,7 @@ async function buildUser(supabaseUser: SupabaseUser): Promise<User | null> {
       avatarUrl: profile.avatar_url || undefined,
       profileCompleted,
       mustChangePassword,
+      petshopId: profile.petshop_id,
     };
 
     return user;

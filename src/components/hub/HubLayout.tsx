@@ -665,7 +665,6 @@ const HubLayout = ({ children }: HubLayoutProps) => {
                 <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="Admin" />
               </div>
             </div>
-          </div>
         </header>
 
         <div className="p-4 sm:p-6 lg:p-10 max-w-[1600px] mx-auto w-full">

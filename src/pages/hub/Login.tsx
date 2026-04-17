@@ -76,8 +76,8 @@ const HubLogin = () => {
       >
         <div className="bg-white/5 backdrop-blur-2xl p-8 rounded-[2.5rem] border border-white/10 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.5)]">
           <div className="flex flex-col items-center mb-8 text-center">
-            <div className="w-24 h-24 rounded-full flex items-center justify-center mb-6 overflow-hidden p-0">
-              <img src="/src/assets/logoredondo.png" alt="Canix Logo" className="w-full h-full object-contain" />
+            <div className="w-20 h-20 mx-auto bg-white/10 rounded-2xl p-4 backdrop-blur-sm border border-white/20">
+              <img src="/canix-logo.png" alt="Canix Logo" className="w-full h-full object-contain" />
             </div>
             <div className="flex items-center gap-2 mb-2 text-[#2F7FD3]">
               <Sparkles size={12} fill="currentColor" />

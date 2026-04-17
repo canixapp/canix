@@ -165,7 +165,11 @@ const NewLicenseModal = ({ isOpen, onClose, onSuccess }: NewLicenseModalProps) =
       
       // Mágica do Redirecionamento Automático
       setTimeout(() => {
-        window.location.href = `/?tenant=${slug}&onboarding=true`;
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname.endsWith('.localhost');
+        const url = isLocal 
+          ? `http://${slug}.localhost:8080/?onboarding=true` 
+          : `https://${slug}.canix.app.br/?onboarding=true`;
+        window.location.href = url;
       }, 1500);
 
     } catch (error: any) {
@@ -220,7 +224,7 @@ const NewLicenseModal = ({ isOpen, onClose, onSuccess }: NewLicenseModalProps) =
                      <ShieldCheck size={14} className="shrink-0" />
                      <span className="text-[10px] font-black uppercase tracking-[0.2em] leading-none">Canix Hub Admin</span>
                   </div>
-                  <h2 className="text-3xl font-black tracking-tighter dark:text-white leading-tight italic truncate">Nova Licença <span className="text-[#2F7FD3]">SaaS</span></h2>
+                  <h2 className="text-3xl font-black tracking-tighter dark:text-white leading-tight italic truncate">Nova Licença</h2>
                   <p className="text-[#64748B] text-[9px] font-black uppercase tracking-widest mt-1 opacity-60 truncate">Sistema escalável pronto para uso</p>
                 </div>
                 <button 
@@ -281,6 +285,20 @@ const NewLicenseModal = ({ isOpen, onClose, onSuccess }: NewLicenseModalProps) =
                     />
                   </div>
 
+                  {/* WhatsApp */}
+                  <div className="space-y-2.5">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B] ml-1 flex items-center gap-2">
+                      <Phone size={12} className="text-[#2F7FD3]" /> WhatsApp / Telefone
+                    </label>
+                    <input
+                      required
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="(11) 99999-9999"
+                      className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800/40 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none font-medium placeholder:text-gray-400"
+                    />
+                  </div>
+
                   {/* Email Admin */}
                   <div className="space-y-2.5">
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B] ml-1 flex items-center gap-2">
@@ -307,20 +325,6 @@ const NewLicenseModal = ({ isOpen, onClose, onSuccess }: NewLicenseModalProps) =
                       value={formData.owner_password}
                       onChange={(e) => setFormData({ ...formData, owner_password: e.target.value })}
                       placeholder="••••••••"
-                      className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800/40 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none font-medium placeholder:text-gray-400"
-                    />
-                  </div>
-
-                  {/* WhatsApp */}
-                  <div className="space-y-2.5">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B] ml-1 flex items-center gap-2">
-                      <Phone size={12} className="text-[#2F7FD3]" /> WhatsApp / Telefone
-                    </label>
-                    <input
-                      required
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="(11) 99999-9999"
                       className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800/40 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none font-medium placeholder:text-gray-400"
                     />
                   </div>

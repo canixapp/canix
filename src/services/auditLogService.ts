@@ -44,12 +44,7 @@ export interface AuditLogWithActor extends AuditLogRow {
 export async function getAuditLogsWithActors(limit = 100): Promise<AuditLogWithActor[]> {
   const { data, error } = await supabase
     .from('audit_log')
-    .select(`
-      *,
-      profiles!audit_log_actor_id_fkey (
-        name
-      )
-    `)
+    .select('*')
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -57,7 +52,7 @@ export async function getAuditLogsWithActors(limit = 100): Promise<AuditLogWithA
 
   return (data || []).map((log: any) => ({
     ...log,
-    actor_name: log.profiles?.name || 'Sistema'
+    actor_name: 'Administrador' // Fallback seguro enquanto o relacionamento de banco é resolvido
   }));
 }
 

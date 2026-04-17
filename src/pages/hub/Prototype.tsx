@@ -19,7 +19,8 @@ import {
   Eye,
   RefreshCw,
   Info,
-  Rocket
+  Rocket,
+  Beaker
 } from "lucide-react";
 import { 
   Tooltip,
@@ -278,17 +279,17 @@ const HubPrototype = () => {
       <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 font-primary">
         <div className="flex items-center gap-6">
           <div className="w-16 h-16 rounded-full flex items-center justify-center overflow-hidden p-0 shrink-0">
-            <img src="/src/assets/logoredondo.png" alt="Canix Logo" className="w-full h-full object-contain" />
+            <img src="/canix-logo.png" alt="Canix Logo" className="w-full h-full object-contain" />
           </div>
           <div>
              <div className="flex items-center gap-2 text-[#2F7FD3] mb-2 font-bold tracking-tighter uppercase text-[10px]">
                <Zap size={14} className="fill-[#2F7FD3]" />
                Console de Orquestração SaaS
              </div>
-             <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Central de Comando</h1>
+             <h1 className="text-3xl md:text-4xl font-bold tracking-tight italic">Master Lab</h1>
              <p className="text-[#6C7A73] mt-2 max-w-xl text-xs md:text-sm leading-relaxed italic">
-               Gerencie o estado global do ecossistema a partir do <span className="text-[#2F7FD3] font-bold">Protótipo</span>. 
-               As alterações no código só afetam os clientes após a sincronização manual.
+               Este é o seu <span className="text-amber-500 font-black">Laboratório de Testes</span>. 
+               Qualquer alteração feita aqui é isolada e só será propagada para a frota de licenças após a sincronização manual.
              </p>
           </div>
         </div>
@@ -296,10 +297,16 @@ const HubPrototype = () => {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <Button 
             variant="outline" 
-            onClick={() => window.open('/?tenant=prototipo', '_blank')} 
-            className="rounded-2xl h-14 px-6 border border-gray-200/50 dark:border-gray-800/50 bg-white dark:bg-[#161B22] hover:bg-gradient-to-r hover:from-transparent hover:to-[#2F7FD3]/5 hover:border-[#2F7FD3]/30 hover:text-[#2F7FD3] transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 font-bold uppercase tracking-widest text-[10px] flex-1 sm:flex-none focus-visible:ring-2 focus-visible:ring-[#2F7FD3] focus-visible:ring-offset-2 outline-none group"
+            onClick={() => {
+              const isLocal = window.location.hostname === 'localhost' || window.location.hostname.endsWith('.localhost');
+              const url = isLocal 
+                ? `http://prototipo.localhost:8080` 
+                : `https://prototipo.canix.app.br`;
+              window.open(url, '_blank');
+            }} 
+            className="rounded-2xl h-14 px-6 border-2 border-amber-500/20 bg-amber-500/5 dark:bg-amber-500/10 hover:bg-amber-500/20 hover:border-amber-500/50 text-amber-600 dark:text-amber-400 transition-all duration-300 shadow-sm hover:shadow-amber-500/20 hover:-translate-y-0.5 active:translate-y-0 font-black uppercase tracking-widest text-[10px] flex-1 sm:flex-none outline-none group"
           >
-            <Eye size={18} aria-hidden="true" className="mr-2 opacity-70 group-hover:opacity-100 transition-opacity" /> Ver Protótipo
+            <Beaker size={18} aria-hidden="true" className="mr-2 opacity-70 group-hover:opacity-100 transition-opacity" /> Acessar Laboratório
           </Button>
           <Button 
             variant="outline" 

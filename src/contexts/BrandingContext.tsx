@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useTheme } from 'next-themes';
 import { usePetshop } from '@/contexts/PetshopContext';
+import { getTenantSlug } from '@/lib/tenant';
 
 export interface Branding {
   shopName: string;
@@ -49,9 +50,11 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
   const { resolvedTheme } = useTheme();
   const currentTheme = resolvedTheme === 'dark' ? 'dark' : 'light';
   const { petshop, settings, updateSettings, updatePetshop } = usePetshop();
+  const tenantSlug = getTenantSlug();
+  const isHub = !tenantSlug || tenantSlug === 'hub';
 
   const branding: Branding = {
-    shopName: petshop?.name || 'PetCão',
+    shopName: isHub ? 'Canix Hub' : (petshop?.name || 'PetCão'),
     logoUrl: petshop?.logo_url || '',
     primaryColor: settings.primaryColor || '#0A7AE6',
   };

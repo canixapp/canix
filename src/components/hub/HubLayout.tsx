@@ -16,7 +16,8 @@ import {
   RefreshCw,
   ArrowUpRight,
   Info,
-  History
+  History,
+  FlaskConical
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -83,10 +84,9 @@ const HubLayout = ({ children }: HubLayoutProps) => {
 
   const menuItems = [
     { label: "Dashboard", path: "/", icon: Activity },
+    { label: "Master Lab", path: "/prototype", icon: FlaskConical },
     { label: "Licenças", path: "/licenses", icon: Key },
     { label: "Assinaturas", path: "/plans", icon: CreditCard },
-    { label: "Auditoria", path: "/auditoria", icon: History },
-    { label: "Protótipo", path: "/prototype", icon: Sparkles },
     { label: "Configurações", path: "/settings", icon: Settings },
   ];
 
@@ -302,7 +302,7 @@ const HubLayout = ({ children }: HubLayoutProps) => {
 
                   <div className={`flex items-center justify-between px-4 py-2.5 rounded-2xl border ${appVersion !== labVersion ? "bg-emerald-500/5 border-emerald-500/10" : "bg-emerald-500/5 dark:bg-emerald-500/10 border-emerald-500/10"}`}>
                     <div className="flex items-center gap-2">
-                      <div className={`w-1.5 h-1.5 rounded-full bg-emerald-500 ${appVersion !== labVersion ? "animate-bounce" : ""}`} />
+                       <div className={`w-1.5 h-1.5 rounded-full bg-emerald-500 ${appVersion !== labVersion ? "animate-bounce" : ""}`} />
                       <span className="text-[10px] font-black uppercase tracking-tight text-emerald-700 dark:text-emerald-400">Status App</span>
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -357,7 +357,7 @@ const HubLayout = ({ children }: HubLayoutProps) => {
             </button>
             <TooltipProvider>
               <div className="hidden lg:flex items-center gap-1.5 sm:gap-3 px-2 sm:px-4 py-1.5 bg-blue-50/50 dark:bg-[#2F7FD3]/5 text-[#2F7FD3]/80 text-[8px] sm:text-[9px] font-semibold uppercase tracking-wider rounded-full border border-[#2F7FD3]/10 max-w-[200px] xs:max-w-none ml-1 sm:ml-2">
-                <span className="hidden leading-none opacity-70">Canix Hub</span>
+                <span className="hidden leading-none opacity-70">Canix Hub Admin</span>
                 
                  <Tooltip>
                    <TooltipTrigger asChild>

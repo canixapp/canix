@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Save, AlertCircle, Trash2, ShieldCheck, Zap, Upload, Camera } from "lucide-react";
+import { X, Save, AlertCircle, Trash2, ShieldCheck, Zap, Upload, Camera, Store, Globe, User, Phone, Mail, Lock, RefreshCw, Sparkles, CreditCard, Activity } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,11 +17,14 @@ const EditLicenseModal = ({ isOpen, onClose, onSuccess, tenant }: EditLicenseMod
   const { user } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
+    slug: "",
     status: "active",
     plan_id: "",
     address: "",
     phone: "",
-    logo_url: ""
+    logo_url: "",
+    owner_name: "",
+    owner_email: ""
   });
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -49,26 +52,32 @@ const EditLicenseModal = ({ isOpen, onClose, onSuccess, tenant }: EditLicenseMod
     if (isOpen && tenant) {
       setFormData({
         name: tenant.name || "",
+        slug: tenant.slug || "",
         status: tenant.status || "active",
         plan_id: tenant.plan_id || "Starter",
         address: "", 
         phone: "",
-        logo_url: ""
+        logo_url: "",
+        owner_name: "",
+        owner_email: ""
       });
 
       const fetchPetshopData = async () => {
         const { data } = await supabase
           .from('petshops')
-          .select('address, phone, logo_url')
+          .select('address, phone, logo_url, settings')
           .eq('id', tenant.id)
           .single();
         
         if (data) {
+          const settings = data.settings as any;
           setFormData(prev => ({
             ...prev,
             address: data.address || "",
             phone: data.phone || "",
-            logo_url: data.logo_url || ""
+            logo_url: data.logo_url || "",
+            owner_name: settings?.owner?.name || "",
+            owner_email: settings?.owner?.email || ""
           }));
         }
       };
@@ -123,12 +132,25 @@ const EditLicenseModal = ({ isOpen, onClose, onSuccess, tenant }: EditLicenseMod
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Alerta de Mudança de Slug
+    if (formData.slug !== tenant.slug) {
+      const confirmSlug = window.confirm(
+        "ATENÇÃO: Você está alterando o SLUG (URL) deste petshop.\n\n" +
+        "Isso mudará o endereço de acesso do cliente. " +
+        "Tem certeza que deseja continuar?"
+      );
+      if (!confirmSlug) return;
+    }
+
     setLoading(true);
 
     try {
+      // 1. Update Tenants Table (SaaS Hub)
       const { error: tenantErr } = await (supabase.from as any)('tenants')
         .update({
           name: formData.name,
+          slug: formData.slug.toLowerCase().trim(),
           status: formData.status,
           plan_id: formData.plan_id,
         })
@@ -136,53 +158,79 @@ const EditLicenseModal = ({ isOpen, onClose, onSuccess, tenant }: EditLicenseMod
 
       if (tenantErr) throw tenantErr;
 
+      // 2. Update Petshops Table (Operations)
+      const { data: currentPetshop } = await supabase
+        .from('petshops')
+        .select('settings')
+        .eq('id', tenant.id)
+        .single();
+      
+      const updatedSettings = {
+        ...(currentPetshop?.settings as any || {}),
+        owner: {
+          name: formData.owner_name,
+          email: formData.owner_email,
+          phone: formData.phone
+        }
+      };
+
       const { error: petshopErr } = await supabase
         .from('petshops')
         .update({
           name: formData.name,
+          slug: formData.slug.toLowerCase().trim(),
           address: formData.address,
           phone: formData.phone,
-          logo_url: formData.logo_url
+          logo_url: formData.logo_url,
+          settings: updatedSettings
         })
         .eq('id', tenant.id);
 
       if (petshopErr) throw petshopErr;
 
-      // Registrar logs de auditoria
+      // 3. Update Audit Logs
       if (user) {
-        if (formData.status !== tenant.status) {
-          insertAuditLog({
-            actor_id: user.id,
-            action: 'update',
-            entity: 'license',
-            target_id: tenant.id,
-            field: 'status',
-            old_value: JSON.stringify(tenant.status),
-            new_value: JSON.stringify(formData.status),
-            details: { name: tenant.name }
-          });
-        }
-        if (formData.plan_id !== tenant.plan_id) {
-          insertAuditLog({
-            actor_id: user.id,
-            action: 'update',
-            entity: 'license',
-            target_id: tenant.id,
-            field: 'plan_id',
-            old_value: JSON.stringify(tenant.plan_id),
-            new_value: JSON.stringify(formData.plan_id),
-            details: { name: tenant.name }
-          });
-        }
+        insertAuditLog({
+          actor_id: user.id,
+          action: 'update',
+          entity: 'license',
+          target_id: tenant.id,
+          details: { 
+            name: formData.name,
+            slug_changed: formData.slug !== tenant.slug
+          }
+        });
       }
 
       toast.success("Licença atualizada!", {
-        description: "As alterações foram replicadas para o petshop."
+        description: "As alterações foram replicadas com sucesso."
       });
       onSuccess();
       onClose();
     } catch (error: any) {
       toast.error("Erro ao atualizar", { description: error.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordRecovery = async () => {
+    if (!formData.owner_email) {
+      toast.error("E-mail não encontrado para recuperação.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(formData.owner_email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success("Link enviado!", {
+        description: `Um e-mail de recuperação foi enviado para ${formData.owner_email}.`
+      });
+    } catch (error: any) {
+      toast.error("Erro ao enviar recuperação", { description: error.message });
     } finally {
       setLoading(false);
     }
@@ -194,16 +242,25 @@ const EditLicenseModal = ({ isOpen, onClose, onSuccess, tenant }: EditLicenseMod
     setLoading(true);
     try {
        // Primeiro deletar da tabela operacional (opcional dependendo do CASCADE)
-       await supabase.from('petshops').delete().eq('id', tenant.id);
+       const { error: errorPetshop, count: countPetshop } = await supabase.from('petshops').delete({ count: 'exact' }).eq('id', tenant.id);
        
-       const { error } = await (supabase.from as any)('tenants').delete().eq('id', tenant.id);
-       if (error) throw error;
+       const { error: errorTenant, count: countTenant } = await (supabase.from as any)('tenants').delete({ count: 'exact' }).eq('id', tenant.id);
+       
+       if (errorTenant) throw errorTenant;
+
+       // Se count for 0 ou null, significa que a RLS bloqueou a deleção
+       if (!countTenant && !countPetshop) {
+         throw new Error("A deleção foi negada pelas políticas de segurança do banco (RLS). Verifique se o seu usuário tem permissão de exclusão.");
+       }
 
        toast.success("Licença removida com sucesso");
        onSuccess();
        onClose();
-    } catch (error) {
-       toast.error("Erro ao remover licença");
+    } catch (error: any) {
+       console.error("Erro ao remover:", error);
+       toast.error("Erro ao remover licença", {
+         description: error.message || "Tente novamente mais tarde."
+       });
     } finally {
        setLoading(false);
     }
@@ -321,77 +378,139 @@ const EditLicenseModal = ({ isOpen, onClose, onSuccess, tenant }: EditLicenseMod
                  <p className="text-[10px] font-black text-[#64748B] uppercase tracking-[0.2em] mt-5">Identidade Visual</p>
               </div>
 
-              <form onSubmit={handleUpdate} className="space-y-8">
-                {/* Seção: Identificação */}
-                <div className="space-y-5">
-                  <div className="flex items-center gap-2 text-[10px] font-black text-[#2F7FD3] uppercase tracking-[0.2em]">
-                    <span className="w-4 h-[1px] bg-[#2F7FD3]/30" /> Dados Operacionais
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="shop-name" className="text-[10px] font-black uppercase tracking-widest text-[#64748B] ml-2">Nome do Estabelecimento</label>
+              <form onSubmit={handleUpdate} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* Nome do Petshop */}
+                  <div className="space-y-2.5">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B] ml-1 flex items-center gap-2">
+                      <Store size={12} className="text-[#2F7FD3]" /> Nome do Petshop
+                    </label>
                     <input
-                      id="shop-name"
                       required
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="Ex: PetCão Boutique…"
-                      className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800/30 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none font-medium"
+                      placeholder="Ex: PetCão Matriz"
+                      className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800/40 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none font-medium"
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <label htmlFor="shop-address" className="text-[10px] font-black uppercase tracking-widest text-[#64748B] ml-2">Endereço de Faturamento</label>
+                  {/* Slug / URL */}
+                  <div className="space-y-2.5">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B] ml-1 flex items-center gap-2">
+                       <Globe size={12} className="text-[#2F7FD3]" /> Slug (URL de Acesso)
+                    </label>
+                    <div className="relative">
+                      <input
+                        required
+                        value={formData.slug}
+                        onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                        className="w-full pl-6 pr-24 py-4 bg-gray-50 dark:bg-gray-800/40 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none font-bold text-sm tracking-tight"
+                        placeholder="petcao-matriz"
+                      />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] font-black text-[#2F7FD3] uppercase tracking-tighter bg-white dark:bg-[#161B22] px-2 py-1 rounded-lg">
+                        .canix.app.br
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Proprietário */}
+                  <div className="space-y-2.5">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B] ml-1 flex items-center gap-2">
+                      <User size={12} className="text-[#2F7FD3]" /> Proprietário
+                    </label>
                     <input
-                      id="shop-address"
-                      value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800/30 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none font-medium"
-                      placeholder="Rua, Número, Bairro, Cidade…"
+                      required
+                      value={formData.owner_name}
+                      onChange={(e) => setFormData({ ...formData, owner_name: e.target.value })}
+                      placeholder="Nome completo"
+                      className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800/40 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none font-medium"
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <label htmlFor="shop-phone" className="text-[10px] font-black uppercase tracking-widest text-[#64748B] ml-2">Contato Estratégico</label>
+                  {/* WhatsApp */}
+                  <div className="space-y-2.5">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B] ml-1 flex items-center gap-2">
+                      <Phone size={12} className="text-[#2F7FD3]" /> WhatsApp / Telefone
+                    </label>
                     <input
-                      id="shop-phone"
+                      required
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800/30 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none font-medium"
-                      placeholder="(11) 99999-9999…"
+                      placeholder="(11) 99999-9999"
+                      className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800/40 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none font-medium"
                     />
                   </div>
-                </div>
 
-                {/* Seção: Contrato */}
-                <div className="space-y-5">
-                  <div className="flex items-center gap-2 text-[10px] font-black text-[#2F7FD3] uppercase tracking-[0.2em]">
-                    <span className="w-4 h-[1px] bg-[#2F7FD3]/30" /> Gestão de Licenciamento
+                  {/* Email Admin */}
+                  <div className="space-y-2.5">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B] ml-1 flex items-center gap-2">
+                      <Mail size={12} className="text-[#2F7FD3]" /> Email de Acesso
+                    </label>
+                    <input
+                      required
+                      type="email"
+                      value={formData.owner_email}
+                      onChange={(e) => setFormData({ ...formData, owner_email: e.target.value })}
+                      placeholder="exemplo@gmail.com"
+                      className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800/40 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none font-medium"
+                    />
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-[#64748B] ml-2">Status do Tenant</label>
+
+                  {/* Gestão de Senha */}
+                  <div className="space-y-2.5">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B] ml-1 flex items-center gap-2">
+                      <Lock size={12} className="text-[#2F7FD3]" /> Segurança da Conta
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handlePasswordRecovery}
+                      className="w-full px-6 py-4 bg-amber-50 dark:bg-amber-900/10 text-amber-600 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/50 rounded-2xl font-bold text-[10px] uppercase tracking-widest hover:bg-amber-100 transition-all flex items-center justify-center gap-2 group"
+                    >
+                      <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
+                      Enviar Link de Recuperação
+                    </button>
+                  </div>
+
+                  {/* Plano */}
+                  <div className="space-y-2.5">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B] ml-1 flex items-center gap-2">
+                      <CreditCard size={12} className="text-[#2F7FD3]" /> Plano do Cliente
+                    </label>
+                    <div className="relative group">
+                      <select
+                        value={formData.plan_id}
+                        onChange={(e) => setFormData({ ...formData, plan_id: e.target.value })}
+                        className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800/40 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none appearance-none font-black italic tracking-tight"
+                      >
+                        <option value="">Nenhum Plano</option>
+                        {plans.map(plan => (
+                           <option key={plan.id} value={plan.id}>{plan.name} (R$ {plan.price})</option>
+                        ))}
+                      </select>
+                      <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none opacity-40">
+                         <Sparkles size={16} />
+                      </div>
+                    </div>
+                  </div>
+
+                   {/* Status */}
+                   <div className="space-y-2.5">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B] ml-1 flex items-center gap-2">
+                      <Activity size={12} className="text-[#2F7FD3]" /> Status da Licença
+                    </label>
+                    <div className="relative group">
                       <select
                         value={formData.status}
                         onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                        className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800/30 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none appearance-none font-black italic tracking-tight"
+                        className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800/40 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none appearance-none font-black italic tracking-tight"
                       >
                         <option value="active">Ativa</option>
                         <option value="inactive">Inativa (Suspensa)</option>
                         <option value="trial">Trial (Degustação)</option>
                       </select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-[#64748B] ml-2">Plano Vigente</label>
-                      <select
-                        value={formData.plan_id}
-                        onChange={(e) => setFormData({ ...formData, plan_id: e.target.value })}
-                        className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-800/30 border-none rounded-2xl focus:ring-2 focus:ring-[#2F7FD3]/20 transition-all dark:text-white outline-none appearance-none font-black italic tracking-tight"
-                      >
-                        <option value="">Nenhum</option>
-                        {plans.map(plan => (
-                          <option key={plan.id} value={plan.id}>{plan.name} • R$ {plan.price}</option>
-                        ))}
-                      </select>
+                      <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none opacity-40">
+                         <ShieldCheck size={16} />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -400,24 +519,20 @@ const EditLicenseModal = ({ isOpen, onClose, onSuccess, tenant }: EditLicenseMod
                   <button
                     type="button"
                     onClick={handleDelete}
-                    aria-label="Remover esta licença permanentemente"
-                    className="w-full sm:w-auto px-6 py-4 bg-red-50 dark:bg-red-500/5 text-red-600 rounded-2xl font-black uppercase tracking-widest text-[9px] hover:bg-red-600 hover:text-white transition-all duration-300 flex items-center justify-center gap-2 group"
+                    className="px-8 py-5 bg-red-50 dark:bg-red-900/10 text-red-500 rounded-[2rem] font-black uppercase tracking-widest text-[9px] hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 group"
                   >
-                    <Trash2 size={16} className="group-hover:scale-110" /> Remover Licença
+                    <Trash2 size={18} /> Remover Licença
                   </button>
                   <button
                     disabled={loading || uploading}
                     type="submit"
-                    className="flex-1 py-4 bg-[#2F7FD3] hover:bg-[#1E3A8A] text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-blue-500/20 transition-all duration-300 flex items-center justify-center gap-2 transform active:scale-95 disabled:opacity-50"
+                    className={`flex-1 py-5 bg-gradient-to-br from-[#1E3A8A] to-[#2F7FD3] text-white rounded-[2rem] font-black uppercase tracking-[0.25em] text-[10px] shadow-2xl shadow-blue-500/30 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50`}
                   >
                     {loading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Salvando…
-                      </>
+                      <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (
                       <>
-                        <Save size={16} /> Salvar Alterações
+                        <Save size={18} /> Salvar Alterações
                       </>
                     )}
                   </button>

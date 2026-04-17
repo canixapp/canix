@@ -1,18 +1,21 @@
 import React from "react";
-import { Globe, Mail, Database, Sparkles } from "lucide-react";
+import { Globe, Mail, Database, Sparkles, History } from "lucide-react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const HubSettings = () => {
+  const navigate = useNavigate();
   const primaryGradient = "from-[#1E3A8A] to-[#2F7FD3]";
 
   const sections = [
-    { title: "Configurações Globais", icon: Globe, description: "Gerencie o domínio principal e configurações de rede." },
-    { title: "Comunicação", icon: Mail, description: "Servidor SMTP, notificações push e marketing global." },
-    { title: "Infraestrutura", icon: Database, description: "Monitoramento de recursos Supabase e Storage." },
+    { title: "Configurações Globais", icon: Globe, description: "Gerencie o domínio principal e configurações de rede.", path: "/settings" },
+    { title: "Comunicação", icon: Mail, description: "Servidor SMTP, notificações push e marketing global.", path: "/settings" },
+    { title: "Infraestrutura", icon: Database, description: "Monitoramento de recursos Supabase e Storage.", path: "/settings" },
+    { title: "Logs de Auditoria", icon: History, description: "Rastreador de alterações globais e infraestrutura.", path: "/auditoria" },
   ];
 
   return (
-      <div className="space-y-8">
+      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <header>
           <h1 className="text-3xl font-bold tracking-tight text-[#141B2B] dark:text-white">Configurações Gerais</h1>
           <p className="text-[#6C7A73] mt-1">Gerencie as configurações fundamentais do ecossistema Canix.</p>
@@ -25,6 +28,7 @@ const HubSettings = () => {
                 key={section.title}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
+                onClick={() => navigate(section.path)}
                 className="w-full text-left bg-white dark:bg-[#141B2B] rounded-[2rem] p-6 shadow-sm border border-gray-50 dark:border-gray-800 flex items-center gap-6 group transition-all"
               >
                 <div className="p-4 bg-blue-50 dark:bg-gray-800 rounded-2xl text-[#2F7FD3] group-hover:scale-110 transition-transform shadow-sm">

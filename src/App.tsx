@@ -106,6 +106,7 @@ const App = () => {
             <TooltipProvider>
               <Toaster />
               <Sonner />
+              <CookieConsentModal />
               <Router>
                 <AuthProvider>
                   <TestModesProvider>
@@ -113,7 +114,6 @@ const App = () => {
                     <ProfileCompletionGate />
                     <TestModeIndicator />
                     <LoginNotificationToast />
-                    <CookieConsentModal />
 
                     <Suspense fallback={<RouteFallback />}>
                       <Routes>

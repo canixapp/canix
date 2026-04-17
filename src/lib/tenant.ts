@@ -8,19 +8,26 @@ export const getTenantSlug = () => {
 
   const hostname = window.location.hostname.toLowerCase();
   
-  // 2. Para desenvolvimento local (localhost)
+  // 2. Para desenvolvimento local (incluindo subdomínios em localhost)
   if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.localhost')) {
     const parts = hostname.split('.');
-    if (parts.length > 1) {
-      const slug = parts[0];
-      return (slug === 'www' || slug === 'hub') ? null : slug;
+    
+    // Se for hub.localhost, trata como o Hub principal
+    if (parts.length > 1 && parts[0] === 'hub') {
+      return null;
     }
-    return null; // Hub
+    
+    // Se tiver subdomínio (ex: prototipo.localhost), retorna o slug
+    if (parts.length > 1) {
+      return parts[0];
+    }
+    
+    return null; // Apenas localhost -> Hub
   }
 
   // 3. Para produção (canix.app.br e seus subdomínios)
   if (hostname === BASE_DOMAIN) {
-    return null; // Domínio raiz (Landing Page / Hub)
+    return null;
   }
 
   if (hostname.endsWith(`.${BASE_DOMAIN}`)) {

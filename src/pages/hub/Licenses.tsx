@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
-import { Key, Plus, Search, Filter, MoreVertical, ExternalLink, Calendar, CheckCircle2, Clock, CreditCard } from "lucide-react";
+import { Plus, Search, Filter, MoreVertical, Key, ExternalLink, Calendar, CreditCard, Store, Beaker, ShieldCheck, Zap, Sparkles, Clock, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import NewLicenseModal from "@/components/hub/NewLicenseModal";
 import EditLicenseModal from "@/components/hub/EditLicenseModal";
@@ -141,22 +141,40 @@ const HubLicenses = () => {
             ) : filteredTenants.length === 0 ? (
               <div className="p-20 text-center text-[#6C7A73] font-black uppercase tracking-widest text-[10px] italic opacity-40">Nenhum resultado para "{searchQuery}"</div>
             ) : filteredTenants.map((tenant) => (
-              <div key={tenant.id} className="p-6 space-y-6">
-                <div className="flex items-center justify-between">
+              <div key={tenant.id} className="p-6">
+                <div className="flex justify-between items-start mb-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-[#F1F3FF] dark:bg-gray-800 flex items-center justify-center overflow-hidden font-bold text-[#2F7FD3] border border-gray-100 dark:border-gray-700">
-                      {tenant.logo_url ? <img src={tenant.logo_url} className="w-full h-full object-cover" /> : tenant.name[0]}
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center overflow-hidden font-bold border shadow-sm ${
+                      tenant.slug === 'prototipo' 
+                        ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200/50' 
+                        : 'bg-[#F1F3FF] dark:bg-gray-800 text-[#2F7FD3] dark:text-[#63C3D8] border-gray-100 dark:border-gray-700'
+                    }`}>
+                      {tenant.slug === 'prototipo' ? (
+                        <Beaker size={24} />
+                      ) : tenant.logo_url ? (
+                        <img src={tenant.logo_url} alt={tenant.name} className="w-full h-full object-cover" />
+                      ) : (
+                        tenant.name[0]
+                      )}
                     </div>
                     <div>
-                      <p className="font-black text-sm italic">{tenant.name}</p>
+                      <p className={`font-black text-sm italic ${tenant.slug === 'prototipo' ? 'text-amber-700 dark:text-amber-400' : ''}`}>
+                        {tenant.name}
+                      </p>
                       <p className="text-[10px] font-bold text-[#6C7A73] uppercase tracking-widest">{tenant.slug}.canix.app.br</p>
                     </div>
                   </div>
-                  <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                    tenant.status === 'active' ? 'bg-blue-50 dark:bg-blue-900/20 text-[#2F7FD3]' : 'bg-red-50 text-red-500'
-                  }`}>
-                    {tenant.status === 'active' ? 'Ativa' : 'Inativa'}
-                  </span>
+                  {tenant.slug === 'prototipo' ? (
+                    <span className="px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                      MASTER LAB
+                    </span>
+                  ) : (
+                    <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                      tenant.status === 'active' ? 'bg-blue-50 dark:bg-blue-900/20 text-[#2F7FD3]' : 'bg-red-50 text-red-500'
+                    }`}>
+                      {tenant.status === 'active' ? 'Ativa' : 'Inativa'}
+                    </span>
+                  )}
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -172,7 +190,13 @@ const HubLicenses = () => {
 
                 <div className="flex gap-3">
                   <button 
-                    onClick={() => window.open(`http://localhost:8080/?tenant=${tenant.slug}`, '_blank')}
+                    onClick={() => {
+                      const isLocal = window.location.hostname === 'localhost' || window.location.hostname.endsWith('.localhost');
+                      const url = isLocal 
+                        ? `http://${tenant.slug}.localhost:8080` 
+                        : `https://${tenant.slug}.canix.app.br`;
+                      window.open(url, '_blank');
+                    }}
                     className="flex-1 py-3 bg-blue-50 dark:bg-blue-900/20 text-[#2F7FD3] rounded-xl font-bold uppercase tracking-widest text-[9px] flex items-center justify-center gap-2"
                   >
                     <ExternalLink size={14} /> Abrir
@@ -218,27 +242,42 @@ const HubLicenses = () => {
                   <tr key={tenant.id} className="hover:bg-[#F9F9FF] dark:hover:bg-white/5 transition-colors group">
                     <td className="p-6">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-[#F1F3FF] dark:bg-gray-800 flex items-center justify-center overflow-hidden font-bold text-[#2F7FD3] dark:text-[#63C3D8] border border-gray-100 dark:border-gray-700 shadow-sm">
-                          {tenant.logo_url ? (
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center overflow-hidden font-bold border shadow-sm ${
+                          tenant.slug === 'prototipo' 
+                            ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200/50' 
+                            : 'bg-[#F1F3FF] dark:bg-gray-800 text-[#2F7FD3] dark:text-[#63C3D8] border-gray-100 dark:border-gray-700'
+                        }`}>
+                          {tenant.slug === 'prototipo' ? (
+                            <Beaker size={24} />
+                          ) : tenant.logo_url ? (
                             <img src={tenant.logo_url} alt={tenant.name} className="w-full h-full object-cover" />
                           ) : (
                             tenant.name[0]
                           )}
                         </div>
                         <div>
-                          <p className="font-bold">{tenant.name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className={`font-bold ${tenant.slug === 'prototipo' ? 'text-amber-700 dark:text-amber-400' : ''}`}>{tenant.name}</p>
+                            {tenant.slug === 'prototipo' && <Sparkles size={12} className="text-amber-500" />}
+                          </div>
                           <p className="text-xs text-[#6C7A73]">{tenant.slug}.canix.app.br</p>
                         </div>
                       </div>
                     </td>
                     <td className="p-6">
-                      <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        tenant.status === 'active' 
-                          ? 'bg-blue-50 dark:bg-blue-900/20 text-[#2F7FD3]' 
-                          : 'bg-[#FFDAD4] text-[#A13E30]'
-                      }`}>
-                        {tenant.status === 'active' ? 'Ativa' : 'Inativa'}
-                      </span>
+                      {tenant.slug === 'prototipo' ? (
+                        <span className="px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                          MASTER LAB
+                        </span>
+                      ) : (
+                        <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          tenant.status === 'active' 
+                            ? 'bg-blue-50 dark:bg-blue-900/20 text-[#2F7FD3]' 
+                            : 'bg-[#FFDAD4] text-[#A13E30]'
+                        }`}>
+                          {tenant.status === 'active' ? 'Ativa' : 'Inativa'}
+                        </span>
+                      )}
                     </td>
                     <td className="p-6">
                       <div className="flex items-center gap-2">
@@ -255,7 +294,13 @@ const HubLicenses = () => {
                     <td className="p-6 text-right">
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
-                          onClick={() => window.open(`http://localhost:8080/?tenant=${tenant.slug}`, '_blank')}
+                          onClick={() => {
+                            const isLocal = window.location.hostname === 'localhost';
+                            const url = isLocal 
+                              ? `http://localhost:8080/?tenant=${tenant.slug}` 
+                              : `https://${tenant.slug}.canix.app.br`;
+                            window.open(url, '_blank');
+                          }}
                           className="p-2 hover:bg-white dark:hover:bg-gray-700 rounded-xl text-[#6C7A73] hover:text-[#2F7FD3] shadow-sm transition-all border border-transparent hover:border-gray-100 dark:hover:border-gray-600"
                         >
                           <ExternalLink size={18} />
